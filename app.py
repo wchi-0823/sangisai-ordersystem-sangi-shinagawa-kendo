@@ -31,8 +31,10 @@ except FileNotFoundError:
 db = firestore.client()
 
 # 2. Flaskアプリケーションの初期化
+# 2. Flaskアプリケーションの初期化
 app = Flask(__name__)
-app.secret_key = os.urandom(24) # セッション情報を暗号化するための秘密鍵
+# 環境変数からSECRET_KEYを読み込む。なければ開発用のランダムキーを使う。
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # --- 認証機能 (Flask-Login) の設定 ---
 login_manager = LoginManager()
