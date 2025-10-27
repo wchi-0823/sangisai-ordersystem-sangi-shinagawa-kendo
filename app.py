@@ -5,6 +5,7 @@
 
 # --- ライブラリのインポート ---
 import firebase_admin
+from firebase_admin import credentials, firestore, auth
 from firebase_admin import credentials, firestore
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -209,6 +210,21 @@ def signage():
 # ====================================================================
 # APIエンドポイント (Backend API)
 # ====================================================================
+@app.route('/api/get_firebase_token', methods=['GET'])
+@login_required
+def get_firebase_token():
+    """
+    現在ログインしているユーザーのためのFirebaseカスタムトークンを生成するAPI
+    """
+    try:
+        # Flask-Loginのcurrent_userからユーザーIDを取得
+        uid = current_user.id
+        # サーバー側でカスタムトークンを生成
+        custom_token = auth.create_custom_token(uid)
+        return jsonify({'token': custom_token.decode('utf-8')})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 @app.route('/order', methods=['POST'])
 def create_order():
     try:

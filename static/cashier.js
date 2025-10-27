@@ -12,6 +12,33 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Firebase Authenticationのインスタンスを取得
+const auth = firebase.auth();
+
+/**
+ * Flaskサーバーからカスタムトークンを取得し、Firebaseにサインインする関数
+ */
+async function signInWithCustomToken() {
+    try {
+        // 1. まずFlaskサーバーに「証明書ください」とお願いする
+        const response = await fetch('/api/get_firebase_token');
+        const data = await response.json();
+
+        if (data.token) {
+            // 2. 受け取った証明書を使って、Firebaseに「この証明書でログインします」と伝える
+            await auth.signInWithCustomToken(data.token);
+            console.log('Firebase Authentication successful.');
+        } else {
+            console.error('Failed to get custom token:', data.error);
+        }
+    } catch (error) {
+        console.error('Error during Firebase Authentication:', error);
+        // 認証に失敗した場合、ページをリロードするか、ログインページにリダイレクトする
+        alert('認証に失敗しました。ページを再読み込みします。');
+        window.location.reload();
+    }
+}
+
     // --- 1. HTML要素の取得 ---
     const toastEl = document.getElementById('toast');
     const ticketInputEl = document.getElementById('ticket-input');
