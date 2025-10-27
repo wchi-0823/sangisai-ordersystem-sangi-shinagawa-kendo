@@ -1,29 +1,28 @@
-// Firebase Authenticationのインスタンスを取得
-const auth = firebase.auth();
+document.addEventListener('DOMContentLoaded', () => {
 
-/**
- * Flaskサーバーからカスタムトークンを取得し、Firebaseにサインインする関数
- */
-async function signInWithCustomToken() {
-    try {
-        // 1. まずFlaskサーバーに「証明書ください」とお願いする
-        const response = await fetch('/api/get_firebase_token');
-        const data = await response.json();
+    // Firebase Authenticationのインスタンスを取得
+    const auth = firebase.auth();
 
-        if (data.token) {
-            // 2. 受け取った証明書を使って、Firebaseに「この証明書でログインします」と伝える
-            await auth.signInWithCustomToken(data.token);
-            console.log('Firebase Authentication successful.');
-        } else {
-            console.error('Failed to get custom token:', data.error);
+    /**
+     * Flaskサーバーからカスタムトークンを取得し、Firebaseにサインインする関数
+     */
+    async function signInWithCustomToken() {
+        try {
+            const response = await fetch('/api/get_firebase_token');
+            const data = await response.json();
+
+            if (data.token) {
+                await auth.signInWithCustomToken(data.token);
+                console.log('Firebase Authentication successful.');
+            } else {
+                throw new Error(data.error || 'Custom token not received.');
+            }
+        } catch (error) {
+            console.error('Error during Firebase Authentication:', error);
+            alert('認証に失敗しました。ページを再読み込みします。');
+            window.location.reload();
         }
-    } catch (error) {
-        console.error('Error during Firebase Authentication:', error);
-        // 認証に失敗した場合、ページをリロードするか、ログインページにリダイレクトする
-        alert('認証に失敗しました。ページを再読み込みします。');
-        window.location.reload();
     }
-}
 
 // --- HTML要素の取得 ---
 const ordersContainer = document.getElementById('orders-container');
@@ -171,4 +170,4 @@ db.collection('orders').where('status', '==', '調理中').orderBy('createdAt', 
             db.collection('orders').doc(docId).update({ status: '提供可能' });
         });
     });
-});
+})});
