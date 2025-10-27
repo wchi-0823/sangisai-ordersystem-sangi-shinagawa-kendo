@@ -1,0 +1,70 @@
+/* ====================================================================
+ *  汎用ローディングスクリーン スタイル (loader.css)
+ * ==================================================================== */
+
+#loader-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999; /* 常に最前面に表示 */
+    background-color: #ffffff; /* 背景色 */
+    
+    /* Flexboxを使って中身を上下左右中央に配置 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    /* フェードアウト用のアニメーション設定 */
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+/* ローダーが非表示になる時のスタイル */
+#loader-wrapper.hidden {
+    opacity: 0;
+    pointer-events: none; /* クリックなどを無効化 */
+}
+
+.loader-content {
+    text-align: center;
+    color: #333;
+}
+
+.loader-logo {
+    max-height: 80px; /* ロゴの最大高さを設定 */
+    width: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.loader-store-name {
+    font-size: 1.8em;
+    font-weight: 500;
+    margin: 0 0 25px 0;
+}
+
+.progress-bar-container {
+    width: 300px;
+    height: 15px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 auto 10px; /* 中央揃え */
+}
+
+.progress-bar {
+    width: 0%; /* 初期状態は0% */
+    height: 100%;
+    background-color: #007bff; /* プログレスバーの色 */
+    border-radius: 10px;
+    /* 幅が変わる時のアニメーション */
+    transition: width 0.4s ease;
+}
+
+.progress-text {
+    font-size: 1em;
+    font-family: monospace; /* 数字が見やすいフォントに */
+}

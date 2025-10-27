@@ -1,0 +1,431 @@
+/**
+ * --------------------------------------------------------------------
+ * 全体共通の基本スタイル (Global & Base)
+ * --------------------------------------------------------------------
+ * このセクションでは、サイト全体のフォント、背景色、基本的なタグの挙動などを定義します。
+ */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6;
+    color: #333;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none; /* リンクの下線を消す */
+}
+
+
+/**
+ * --------------------------------------------------------------------
+ * レイアウト・構造 (Layout)
+ * --------------------------------------------------------------------
+ * ヘッダーやメインコンテンツエリアなど、ページの骨格となる部分のスタイルを定義します。
+ */
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 10px 20px; /* 少しpaddingを調整 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* ヘッダー下に影をつける */
+    display: flex; /* 【変更】flexboxレイアウトに変更 */
+    align-items: center; /* 【追加】垂直方向中央揃え */
+    justify-content: center; /* 【追加】水平方向中央揃え */
+    position: relative; /* 【追加】ログアウトボタンの配置基準 */
+}
+
+/* 【新規】ロゴとタイトルのコンテナ */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* ロゴとタイトルの間のスペース */
+}
+
+/* 【新規】ヘッダーロゴのスタイル */
+.header-logo {
+    height: 40px; /* 高さを指定 */
+    width: auto; /* 幅は自動調整 */
+    border-radius: 5px; /* 少し角を丸める */
+}
+
+header h1 {
+    font-size: 1.3em;
+    font-weight: 500;
+    margin: 0;
+}
+
+main {
+    padding: 20px;
+    max-width: 800px; /* PCなど広い画面でも見やすいように最大幅を設定 */
+    margin: 0 auto;   /* 左右の余白を自動で計算して中央揃えにする */
+}
+
+/* 【修正】ログアウトボタンの位置を調整 */
+.logout-button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #333;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    /* 位置を右上に固定するためのスタイル */
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.logout-button:hover {
+    background-color: #e2e6ea;
+}
+
+
+
+/**
+ * --------------------------------------------------------------------
+ * 再利用可能なパーツ (Components)
+ * --------------------------------------------------------------------
+ * ボタン、カード、通知など、サイトの様々な場所で繰り返し使われるパーツのスタイルを定義します。
+ */
+
+/* --- カード --- */
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* カードに影をつけて立体的に見せる */
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* --- ボタン --- */
+/* 全てのボタンと、ボタンのように見せたいリンク(.button-link)に共通のスタイル */
+button, 
+.button-link {
+    display: inline-block;
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer; /* マウスカーソルを指の形にする */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    background-color: #007bff; /* 基本の青色 */
+    transition: background-color 0.2s; /* ホバー時の色の変化を滑らかにする */
+}
+
+button:hover, 
+.button-link:hover {
+    background-color: #0056b3; /* マウスを乗せた時に少し暗い青色に */
+}
+
+button:disabled {
+    background-color: #cccccc; /* 非アクティブなボタンの色 */
+    cursor: not-allowed;     /* 禁止カーソル */
+}
+
+/* 注文確定など、特に目立たせたいボタン */
+.primary-action {
+    background-color: #28a745; /* 緑色 */
+    width: 100%;
+    box-sizing: border-box; /* paddingを含めて幅100%にする */
+}
+
+.primary-action:hover {
+    background-color: #218838;
+}
+
+/* カート内の削除ボタン */
+.delete-btn {
+    background-color: #dc3545; /* 赤色 */
+}
+
+/* --- リンク --- */
+.footer-link {
+    display: block; /* リンクをブロック要素にして、marginなどを効かせる */
+    text-align: center;
+    margin-top: 20px;
+}
+
+
+/**
+ * --------------------------------------------------------------------
+ * ページごとの特有のスタイル (Pages & Sections)
+ * --------------------------------------------------------------------
+ * お客様メニュー画面やカート画面など、特定のページやセクションにのみ適用されるスタイルを定義します。
+ */
+
+/* --- お客様メニュー画面 --- */
+
+/* カテゴリ絞り込みボタンのコンテナ */
+.category-container {
+    display: flex; /* ボタンを横並びにする */
+    gap: 10px;     /* ボタン間の隙間 */
+    margin-bottom: 20px;
+    overflow-x: auto; /* スマホなどでボタンが多い時に横スクロールできるようにする */
+    padding-bottom: 10px;
+}
+
+.category-btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background-color: #e9ecef;
+    color: #333;
+    border: 1px solid #ccc;
+    white-space: nowrap; /* ボタン内の文字を改行させない */
+}
+
+/* 選択されているカテゴリボタンのスタイル */
+.category-btn.active {
+    background-color: #333;
+    color: white;
+    border-color: #333;
+}
+
+/* 商品カードのレイアウト (PC向け: 横並び) */
+.item-card {
+    display: flex;
+    flex-direction: row; /* 画像と情報を横並びに */
+    align-items: center;
+    gap: 24px;
+}
+
+/* 商品画像 */
+.item-image {
+    width: 180px;
+    height: 120px; /* 3:2比率 */
+    object-fit: cover; /* 画像の比率を保ったままトリミングして表示 */
+    border-radius: 8px;
+    flex-shrink: 0; /* 画像が縮まないようにする */
+}
+
+/* 商品情報（名前や説明など）のコンテナ */
+.item-info {
+    flex-grow: 1; /* 残りの幅をすべて使う */
+}
+
+/* 売り切れ表示 */
+.sold-out {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* 数量セレクター (+, -, 数字) */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.quantity-selector button {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 1.2em;
+    line-height: 30px;
+    background-color: #e9ecef;
+    color: #333;
+}
+
+.quantity-selector .quantity {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* --- カート画面 --- */
+
+/* カート内商品のレイアウト */
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* カート内商品の画像 */
+.cart-item-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+/* カート内商品の情報コンテナ */
+.cart-item-info {
+    flex-grow: 1;
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.cart-item-controls .quantity {
+    font-size: 1.2em;
+}
+
+
+/* --- フローティングアクションボタン (右下のカートボタン) --- */
+.fab-container {
+    position: fixed; /* 画面に固定 */
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+}
+
+.fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: #28a745;
+    color: white;
+    border-radius: 50%; /* 円形にする */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    font-size: 2em; /* アイコンのサイズ */
+    transition: transform 0.2s;
+}
+
+.fab:hover {
+    transform: scale(1.1); /* ホバー時に少し大きくする */
+    background-color: #218838;
+}
+
+/* --- トースト通知 (画面上部/下部に表示されるメッセージ) --- */
+.toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s, top 0.5s, bottom 0.5s;
+    pointer-events: none; /* 通知をクリックできないようにする */
+    text-align: center;
+    max-width: 90%;
+    box-sizing: border-box;
+}
+
+.toast.show {
+    opacity: 1; /* .showクラスが付いたら表示する */
+}
+
+
+/**
+ * --------------------------------------------------------------------
+ * レスポンシブ対応 (Responsive)
+ * --------------------------------------------------------------------
+ * 画面幅が狭い場合（主にスマートフォン）のスタイルを定義します。
+ */
+
+/* 画面幅が600px以下の場合に適用 */
+@media (max-width: 600px) {
+    /* 【追加】ヘッダーのタイトルを少し小さく */
+    header h1 {
+        font-size: 1.1em;
+    }
+    
+    /* 商品カードのレイアウトを縦並びに変更 */
+    .item-card,
+    .cart-item {
+        flex-direction: column; /* 縦並びに */
+        align-items: stretch; /* 幅を親要素に合わせる */
+        gap: 12px;
+    }
+    
+    .item-image,
+    .cart-item-image {
+        width: 100%; /* 幅を100%に */
+        height: 180px; /* 高さを固定 */
+        margin-bottom: 10px;
+    }
+}
+
+/**
+ * --------------------------------------------------------------------
+ * ヘッダー右上のアクションボタン (Header Actions)
+ * --------------------------------------------------------------------
+ * 画面右上に固定表示されるログアウトボタンや全画面表示ボタンなどのスタイルを定義します。
+ */
+ 
+/* --- ヘッダー右上のアクションボタン用コンテナ --- */
+.header-actions {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    z-index: 500;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.header-actions .button-link,
+.header-actions button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #333;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.2s, opacity 0.3s;
+    opacity: 1;
+}
+.header-actions .button-link:hover,
+.header-actions button:hover {
+    background-color: #e2e6ea;
+}
+
+/* 全画面表示中は、アクションボタン全体を非表示にする */
+body.fullscreen .header-actions {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 【新規】権限設定テーブルのスタイル */
+#role-access-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+#role-access-table th, 
+#role-access-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+#role-access-table th {
+    background-color: #f2f2f2;
+}
+#role-access-table td:first-child {
+    text-align: left;
+    font-weight: bold;
+}
+#role-access-table input[type="checkbox"] {
+    transform: scale(1.5); /* チェックボックスを大きく見やすく */
+    cursor: pointer;
+}
+
+#shop-logo-preview img {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}

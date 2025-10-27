@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カートの確認</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* PC向け（画面幅が601px以上）のスタイル */
+        @media (min-width: 601px) {
+            .cart-item-card {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>カートの中身</h1>
+        </div>
+    </header>
+
+    <main>
+        <div id="cart-items-container">
+            <!-- JavaScriptによって商品リストがここに生成されます -->
+        </div>
+        
+        <div id="summary-container" class="card">
+            <p><strong>合計点数:</strong> <span id="total-quantity">0</span>点</p>
+            <p><strong>合計金額:</strong> <span id="total-price">0</span>円</p>
+        </div>
+
+        <button id="order-btn" class="primary-action">注文を確定する</button>
+
+        <a href="/" class="footer-link">メニューに戻る</a>
+    </main>
+
+    <script src="{{ url_for('static', filename='cart.js') }}"></script>
+
+</body>
+</html>

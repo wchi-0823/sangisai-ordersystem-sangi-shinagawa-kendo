@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン</title>
+    <!-- サイト共通のスタイルシートを読み込む -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- このページ専用のスタイル -->
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            box-sizing: border-box; /* paddingを含めて幅100%にする */
+        }
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>ログイン</h1>
+        </div>
+    </header>
+
+    <main>
+        <div class="card login-container">
+            <!-- フォームの送信先は現在のURL -->
+            <form method="POST" action="">
+                
+                <!-- ログイン失敗時や、未ログインでアクセスした際にメッセージを表示 -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <p class="error-message">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- app.pyから直接渡されたエラーメッセージを表示 -->
+                {% if error %}
+                    <p class="error-message">{{ error }}</p>
+                {% endif %}
+
+                <!-- ログイン後にリダイレクトする先のURLを、見えないフィールドに保持する -->
+                <input type="hidden" name="next" value="{{ next or '' }}">
+                
+                <!-- ユーザー名とパスワードの入力欄 -->
+                <input type="text" name="username" placeholder="ユーザー名" required>
+                <input type="password" name="password" placeholder="パスワード" required>
+                
+                <button type="submit" class="primary-action">ログイン</button>
+            </form>
+        </div>
+    </main>
+
+</body>
+</html>

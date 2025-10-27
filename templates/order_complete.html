@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ご注文完了</title>
+    <!-- サイト共通のスタイルシートを読み込む -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- このページ専用のスタイル -->
+    <style>
+        /* --- デジタルレシート全体のスタイル --- */
+        .receipt-box {
+            text-align: left;
+            padding: 20px;
+            margin: 20px 0;
+            border: 3px dashed #333;
+            background-color: #fff;
+        }
+
+        /* レシートのヘッダー部分 (タイトルと注文日時) */
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .receipt-header h2 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+        .receipt-header .order-time {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* 商品一覧テーブル */
+        .receipt-items table {
+            width: 100%;
+            border-collapse: collapse; /* 罫線を1本線にする */
+            margin-bottom: 20px;
+        }
+        .receipt-items th,
+        .receipt-items td {
+            padding: 8px 0;
+        }
+        .receipt-items th {
+            border-bottom: 2px solid #333;
+        }
+        .receipt-items .col-item { text-align: left; }
+        .receipt-items .col-qty { text-align: right; }
+        .receipt-items .col-price { text-align: right; }
+
+        /* 合計金額 */
+        .receipt-total {
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-top: 1px solid #666;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        /* レシートのフッター部分 (お客様番号とQRコード) */
+        .receipt-footer {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .receipt-footer .ticket-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            letter-spacing: 5px; /* 文字間隔を広げて見やすく */
+        }
+        #qrcode {
+            width: 128px;
+            height: 128px;
+            margin: 15px auto 0; /* QRコードを中央揃え */
+        }
+
+        /* スクリーンショットを促す注意書き */
+        .screenshot-guide {
+            color: #dc3545; /* 赤色 */
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>ご注文ありがとうございます！</h1>
+        </div>
+    </header>
+
+    <main>
+        <div class="card">
+            <p>会計と商品受け取りの際に、下のレシートをご提示ください。</p>
+
+            <!-- app.pyから注文データ(order)が渡されてきた場合のみ、レシートを表示 -->
+            {% if order %}
+                <!-- このdivの中身が画像として保存される -->
+                <div class="receipt-box" id="receipt-to-save">
+                    
+                    <!-- ヘッダー：タイトルと日時 -->
+                    <div class="receipt-header">
+                        <h2>ご利用明細</h2>
+                        <p class="order-time">{{ order.formatted_time }}</p>
+                    </div>
+
+                    <!-- 商品リスト -->
+                    <div class="receipt-items">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-item">商品名</th>
+                                    <th class="col-qty">数量</th>
+                                    <th class="col-price">金額</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 注文内の商品をループして一行ずつ表示 -->
+                                {% for item in order['items'] %}
+                                    <tr>
+                                        <td class="col-item">{{ item.name }}</td>
+                                        <td class="col-qty">{{ item.quantity }}</td>
+                                        <td class="col-price">{{ item.price * item.quantity }}円</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 合計金額 -->
+                    <div class="receipt-total">
+                        <span>合計:</span>
+                        <span>{{ order.totalPrice }}円</span>
+                    </div>
+
+                    <!-- フッター：お客様番号とQRコード -->
+                    <div class="receipt-footer">
+                        <p>お客様番号</p>
+                        <div class="ticket-number">{{ order.ticketNumber }}</div>
+                        <div id="qrcode"></div>
+                    </div>
+
+                </div>
+
+                <!-- レシート画像保存ボタン -->
+                <button id="save-receipt-btn" class="button-link" style="width: 100%; box-sizing: border-box;">
+                    レシートを画像で保存
+                </button>
+            
+            {% else %}
+                <!-- 注文データの取得に失敗した場合のメッセージ -->
+                <p>注文情報の読み込みに失敗しました。</p>
+            {% endif %}
+            
+            <p class="screenshot-guide">
+                混雑時は画面を再表示できない場合があります。<br>
+                ボタンで保存するか、スクリーンショットを撮ってください。
+            </p>
+        </div>
+
+        <a href="/" class="button-link footer-link">さらに注文する（メニューに戻る）</a>
+    </main>
+
+    <!-- 外部ライブラリの読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- このページ専用のJavaScript -->
+    <script>
+        // HTMLドキュメントが完全に読み込まれてから処理を開始
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- QRコードの生成 ---
+            // app.pyから渡されたチケット番号を取得
+            const ticketNumberText = "{{ order.ticketNumber if order else '' }}";
+            const qrcodeContainer = document.getElementById('qrcode');
+
+            // チケット番号があれば、QRコードを生成する
+            if (ticketNumberText && qrcodeContainer) {
+                new QRCode(qrcodeContainer, {
+                    text: ticketNumberText,
+                    width: 128,
+                    height: 128,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H // 誤り訂正レベルを高く設定
+                });
+            }
+
+            // --- レシートの画像保存 ---
+            const saveBtn = document.getElementById('save-receipt-btn');
+            const receiptBox = document.getElementById('receipt-to-save');
+
+            // ボタンが存在する場合のみ、クリックイベントを設定
+            if (saveBtn && receiptBox) {
+                saveBtn.addEventListener('click', () => {
+                    // html2canvasライブラリを使って、指定した要素を画像(canvas)に変換
+                    html2canvas(receiptBox).then(canvas => {
+                        // canvasをPNG画像のURLに変換
+                        const image = canvas.toDataURL("image/png");
+                        
+                        // ダウンロード用の見えないリンクを作成
+                        const link = document.createElement('a');
+                        link.href = image;
+                        link.download = `receipt-${ticketNumberText}.png`; // ファイル名を設定
+                        
+                        // リンクをプログラム的にクリックして、ダウンロードを開始
+                        link.click();
+                    });
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden - アクセスが拒否されました</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .container { text-align: center; margin-top: 80px; }
+        .message-en { font-family: monospace; color: #666; font-size: 1.2em; }
+        .countdown { font-weight: bold; font-size: 1.1em; }
+
+        /* 【追加】このページのボタン専用のスタイル */
+        .button-container {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+        .button-container .button-link {
+            padding: 15px 40px; /* paddingを増やして大きくする */
+            font-size: 1.2em;    /* 文字も大きくする */
+            min-width: 250px;
+            box-sizing: border-box;
+        }
+        /* 【追加】ログアウトボタンの色をグレー系に */
+        .logout-action {
+            background-color: #6c757d;
+        }
+        .logout-action:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>Access Denied</h1>
+        </div>
+    </header>
+    <main>
+        <div class="card container">
+            <!-- 【変更】タイトルとメッセージを更新 -->
+            <h2>アクセス権限がありません</h2>
+            <p class="message-en">403 Forbidden</p>
+            <hr>
+            
+            <!-- 【変更】秒数を10秒に変更 -->
+            <p><span id="countdown" class="countdown">10</span>秒後にトップページに戻ります...</p>
+            
+            <!-- 【変更】ボタンをコンテナで囲み、ログアウトボタンを追加 -->
+            <div class="button-container">
+                <a href="/" class="button-link">すぐに戻る</a>
+                <a href="{{ url_for('logout') }}" class="button-link logout-action">ログアウト</a>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const countdownElement = document.getElementById('countdown');
+            // 【変更】秒数を10秒に変更
+            let seconds = 10;
+
+            const interval = setInterval(() => {
+                seconds--;
+                countdownElement.textContent = seconds;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    window.location.href = '/';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

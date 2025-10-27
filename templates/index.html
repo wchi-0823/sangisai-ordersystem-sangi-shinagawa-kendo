@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ storeName or '模擬店 注文システム' }}</title>
+    <!-- サイト共通のスタイルシートを読み込む -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- ページ上部のヘッダー -->
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>{{ storeName or '商品メニュー' }}</h1>
+        </div>
+    </header>
+
+    <!-- メインコンテンツエリア -->
+    <main>
+        <!-- 「カートに追加しました」などの通知を表示する場所 -->
+        <div id="toast" class="toast" style="top: 30px;"></div>
+
+        <!-- カテゴリ絞り込みボタンを表示するコンテナ -->
+        <div id="category-filter" class="category-container">
+            <button class="category-btn active" data-category="all">すべて</button>
+            <!-- app.pyから渡されたカテゴリリストをループしてボタンを生成 -->
+            {% for category in categories %}
+                <button class="category-btn" data-category="{{ category }}">{{ category }}</button>
+            {% endfor %}
+        </div>
+
+        <!-- 商品リスト全体を囲むコンテナ -->
+        <div id="menu-items-list">
+            <!-- app.pyから渡された商品リストをループして、商品カードを一つずつ生成 -->
+            {% for item in items %}
+                <div class="card item-card" data-item-id="{{ item.ItemID }}" data-category="{{ item.get('category', '未分類') }}">
+                    
+                    <!-- もし画像URLが存在すれば、画像を表示する -->
+                    {% if item.imageUrl %}
+                        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" class="item-image">
+                    {% endif %}
+                    
+                    <!-- 商品名や価格などの情報エリア -->
+                    <div class="item-info">
+                        <h2>{{ item.name }}</h2>
+                        <p><strong>価格:</strong> {{ item.price }}円</p>
+                        <p>{{ item.description }}</p>
+                        
+                        <!-- もし売り切れでなければ、数量セレクターとカート追加ボタンを表示 -->
+                        {% if not item.isSoldOut %}
+                            <div class="quantity-selector">
+                                <button class="quantity-minus">-</button>
+                                <span class="quantity">1</span>
+                                <button class="quantity-plus">+</button>
+                            </div>
+                            <button class="add-to-cart-btn" data-item-name="{{ item.name }}" data-item-price="{{ item.price }}">
+                                カートに追加
+                            </button>
+                        {% else %}
+                            <!-- 売り切れの場合は「売り切れ」と表示 -->
+                            <p class="sold-out">売り切れ</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- 画面右下に常に表示される「カートを見る」ボタン -->
+    <div class="fab-container">
+        <a href="/cart" class="fab" aria-label="カートを確認する">
+            <!-- 買い物かごのSVGアイコン -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+        </a>
+    </div>
+
+    <!-- このページ専用のJavaScriptファイルを読み込む -->
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計・受取</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { margin: 0; }
+        header { position: sticky; top: 0; z-index: 100; justify-content: flex-start; }
+        .cashier-container { display: flex; height: calc(100vh - 62px); }
+        .left-panel { flex: 1; padding: 20px; border-right: 2px solid #ddd; }
+        .right-panel { flex: 1; padding: 20px; overflow-y: auto; }
+        #qr-reader { width: 100%; max-width: 500px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-sizing: border-box; }
+        #qr-reader video { border-radius: 5px !important; }
+        #qr-reader button { background-color: #007bff !important; color: white !important; border: none !important; border-radius: 5px !important; padding: 8px 12px !important; margin: 10px 5px !important; cursor: pointer; }
+        #qr-reader select { padding: 5px; border-radius: 5px; }
+        #manual-input { margin-top: 20px; text-align: center; }
+        #manual-input input { font-size: 1.2em; padding: 10px; width: 200px; }
+        #manual-input button { padding: 12px 20px; }
+        .ready-list-container { display: flex; flex-wrap: wrap; gap: 15px; }
+        .ready-ticket { padding: 20px; font-size: 2em; font-weight: bold; border-radius: 8px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
+        .ready-ticket.unpaid { border: 4px solid #dc3545; color: #dc3545; }
+        .ready-ticket.paid { border: 4px solid #28a745; }
+        .toast { bottom: 30px; }
+        .toast.show { bottom: 50px; }
+        .toast.error { background-color: #dc3545; }
+        .toast.success { background-color: #28a745; }
+        body.fullscreen header,
+        body.fullscreen .header-actions {
+            display: none;
+        }
+    </style>
+</head>
+<body class="not-fullscreen">
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>会計・受取</h1>
+        </div>
+    </header>
+    
+    <div class="header-actions">
+        <a href="{{ url_for('logout') }}" class="button-link">ログアウト</a>
+        <button id="fullscreen-btn">全画面</button>
+    </div>
+
+    <div class="cashier-container">
+        <div class="left-panel">
+            <h2>QRコード読み取り / 番号入力</h2>
+            <div id="qr-reader"></div>
+            <div id="manual-input" class="card">
+                <h3>番号手入力</h3>
+                <input type="text" id="ticket-input" placeholder="0000" inputmode="numeric">
+                <button id="submit-ticket">決定</button>
+            </div>
+        </div>
+        <div class="right-panel">
+            <h2>お渡しできます</h2>
+            <div id="ready-list-container" class="ready-list-container"></div>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="{{ url_for('static', filename='firebase-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='cashier.js') }}"></script>
+</body>
+</html>

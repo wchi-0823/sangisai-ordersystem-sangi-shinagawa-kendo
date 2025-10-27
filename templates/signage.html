@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Signage</title>
+    <style>
+        /* --- 全画面レイアウトの基本設定 --- */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* スクロールバーを常に非表示 */
+            background-color: #000; /* コンテンツがない場合の背景色 */
+        }
+
+        /* --- スライドショーのコンテナ --- */
+        #signage-container {
+            width: 100%;
+            height: 100%;
+            position: relative; /* スライドを重ねるための基準点 */
+        }
+
+        /* --- 各スライドの共通スタイル --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0; /* 初期状態では透明にしておく */
+            
+            /* 画像スライド用のスタイル */
+            background-size: contain;    /* アスペクト比を保ったまま、はみ出さずに全体を表示 */
+            background-position: center; /* 画像を中央に配置 */
+            background-repeat: no-repeat;
+            
+            /* フェードアニメーションの時間 */
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        /* 表示中のスライドに適用されるスタイル */
+        .slide.active {
+            opacity: 1; /* フェードインして表示 */
+        }
+
+        /* --- 全画面表示ボタン --- */
+        #fullscreen-btn {
+            position: fixed; /* 画面に固定 */
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒 */
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            opacity: 0; /* 通常は透明 */
+            transition: opacity 0.3s;
+        }
+        /* マウスが画面上にある時 or フルスクリーンでない時にボタンを表示 */
+        body:hover #fullscreen-btn {
+            opacity: 1;
+        }
+        body.fullscreen #fullscreen-btn {
+            opacity: 0;
+            pointer-events: none; /* クリックも無効化 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- スライドショーのメインコンテナ -->
+    <div id="signage-container">
+        <!-- JavaScriptによってスライドがここに生成されます -->
+    </div>
+
+    <!-- 全画面表示ボタン -->
+    <button id="fullscreen-btn">全画面表示</button>
+    
+    <!-- このページ専用のJavaScript -->
+    <script src="{{ url_for('static', filename='signage.js') }}"></script>
+
+</body>
+</html>

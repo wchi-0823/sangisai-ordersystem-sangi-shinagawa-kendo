@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>総合モニター</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f0f2f5; }
+        header { position: sticky; top: 0; z-index: 100; justify-content: flex-start; }
+        .container { display: flex; height: calc(100vh - 62px); }
+        .column { flex: 1; padding: 15px; overflow-y: auto; }
+        .column h1 { text-align: center; margin-top: 0; padding-bottom: 10px; border-bottom: 3px solid #ccc; }
+        #cooking-column { background-color: #e2e8f0; }
+        #ready-column { background-color: #d1fae5; border-left: 2px solid #ccc; }
+        .tickets-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+        .ticket-number { background-color: white; color: #333; font-size: 4em; font-weight: bold; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #ready-column .ticket-number { cursor: pointer; border: 5px solid #22c55e; }
+        .input-preview { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); color: white; font-size: 3em; padding: 10px 30px; border-radius: 10px; letter-spacing: 5px; opacity: 0; transition: opacity 0.3s; }
+        .input-preview.visible { opacity: 1; }
+
+        #unmute-button.active {
+            background-color: #28a745;
+            color: #fff;
+        }
+        
+        body.fullscreen header,
+        body.fullscreen .header-actions {
+            display: none;
+        }
+
+        /* 【追加】全画面時にコンテナの高さを画面全体に広げる */
+        body.fullscreen .container {
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>総合モニター</h1>
+        </div>
+    </header>
+
+    <div class="header-actions">
+        <a href="{{ url_for('logout') }}" class="button-link">ログアウト</a>
+        <button id="unmute-button">音声有効化</button>
+        <button id="fullscreen-btn">全画面</button>
+    </div>
+    
+    <div class="container">
+        <div id="cooking-column" class="column">
+            <h1>調理中</h1>
+            <div id="cooking-tickets-list" class="tickets-list"></div>
+        </div>
+        <div id="ready-column" class="column">
+            <h1>お渡しできます</h1>
+            <div id="ready-tickets-list" class="tickets-list"></div>
+        </div>
+    </div>
+    
+    <div id="input-preview" class="input-preview"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="{{ url_for('static', filename='firebase-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='display.js') }}"></script>
+</body>
+</html>
