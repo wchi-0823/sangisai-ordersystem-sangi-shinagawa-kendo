@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>準備中</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .container { text-align: center; margin-top: 80px; }
+        .message { font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            {% if storeLogoUrl %}
+                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
+            {% endif %}
+            <h1>{{ storeName or '模擬店' }}</h1>
+        </div>
+    </header>
+    <main>
+        <div class="card container">
+            <h2>現在、販売を停止しています</h2>
+            <p class="message">
+                本日の営業は終了しました。またのご利用をお待ちしております。
+            </p>
+            <hr>
+            <p>管理者の方は<a href="{{ url_for('login', next=url_for('admin')) }}">こちらからログイン</a>して設定を変更してください。</p>
+        </div>
+    </main>
+</body>
+</html>

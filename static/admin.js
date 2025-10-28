@@ -14,6 +14,56 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
 
+    
+    // --- 店舗ステータストグルスイッチ ---
+    const statusToggle = document.getElementById('store-status-toggle');
+    const statusText = document.getElementById('store-status-text');
+
+    if (statusToggle) {
+        // 1. 現在の状態をサーバーから取得して表示
+        fetch('/api/get_store_status')
+            .then(res => res.json())
+            .then(data => {
+                const isOpen = data.isStoreOpen;
+                statusToggle.checked = isOpen;
+                updateStatusText(isOpen);
+            });
+
+        // 2. スイッチが変更された時のイベント
+        statusToggle.addEventListener('change', () => {
+            const newStatus = statusToggle.checked;
+            
+            // サーバーに新しい状態を送信
+            fetch('/api/update_store_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isStoreOpen: newStatus })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    updateStatusText(newStatus);
+                    alert(newStatus ? '注文の受付を開始しました。' : '注文の受付を停止しました。');
+                } else {
+                    alert('状態の変更に失敗しました: ' + data.error);
+                    // 失敗したらスイッチを元の状態に戻す
+                    statusToggle.checked = !newStatus;
+                }
+            });
+        });
+    }
+
+    function updateStatusText(isOpen) {
+        if (isOpen) {
+            statusText.textContent = '販売中';
+            statusText.className = 'toggle-label open';
+        } else {
+            statusText.textContent = '販売停止中';
+            statusText.className = 'toggle-label closed';
+        }
+    }
+
+
     // --- 1. サイドバーの開閉処理 ---
     const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
     const sidebarOverlay = document.getElementById('sidebar-overlay');

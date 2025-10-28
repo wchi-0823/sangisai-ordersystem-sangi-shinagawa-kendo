@@ -146,6 +146,17 @@ def unauthorized_page():
 # ====================================================================
 @app.route('/')
 def index():
+    # Firestoreから店舗の営業状態を取得
+    doc = db.collection('store_settings').document('main').get()
+    is_open = True # デフォルトは営業中
+    if doc.exists:
+        is_open = doc.to_dict().get('isStoreOpen', True)
+
+    if not is_open:
+        # 閉店中なら、新しい閉店中ページを表示
+        return render_template('closed.html')
+
+    # 営業中なら、今まで通りメニューページを表示
     items_ref = db.collection('items').stream()
     items_list = [dict(item.to_dict(), **{'ItemID': item.id}) for item in items_ref]
     all_categories = sorted(list(set(item.get('category', '未分類') for item in items_list)))
@@ -210,6 +221,35 @@ def signage():
 # ====================================================================
 # APIエンドポイント (Backend API)
 # ====================================================================
+@app.route('/api/get_store_status', methods=['GET'])
+def get_store_status():
+    """店舗の営業状態を取得するAPI（ログイン不要）"""
+    try:
+        doc = db.collection('store_settings').document('main').get()
+        if doc.exists:
+            # isStoreOpenが設定されていなければ、デフォルトでTrue（営業中）を返す
+            status = doc.to_dict().get('isStoreOpen', True)
+            return jsonify({'isStoreOpen': status})
+        return jsonify({'isStoreOpen': True}) # ドキュメントがなければ営業中とみなす
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update_store_status', methods=['POST'])
+@login_required
+def update_store_status():
+    """店舗の営業状態を更新するAPI（ログイン必須）"""
+    if current_user.get_role() not in ['admin', 'superadmin']:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    try:
+        data = request.get_json()
+        new_status = data.get('isStoreOpen')
+        if new_status is None:
+            return jsonify({'success': False, 'error': 'Missing data'}), 400
+        
+        db.collection('store_settings').document('main').set({'isStoreOpen': bool(new_status)}, merge=True)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/update_order_status', methods=['POST'])
 @login_required
 def update_order_status():
