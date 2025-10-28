@@ -1,3 +1,5 @@
+//QRコードは株式会社デンソーウェーブの登録商標です
+
 document.addEventListener('DOMContentLoaded', () => {
     const toastEl = document.getElementById('toast');
     const ticketInputEl = document.getElementById('ticket-input');
@@ -95,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     ticketDiv.addEventListener('click', () => {
                         if (order.paymentStatus === '未会計') {
-                            alert(`【未会計】番号 ${order.ticketNumber}\n\nお客様に、先にQRコードを提示してお会計を済ませるよう案内してください。`);
+                            alert(`【未会計】番号 ${order.ticketNumber}\n\nお客様に、先に二次元コードを提示してお会計を済ませるよう案内してください。`);
                             return;
                         }
                         if (confirm(`番号 ${order.ticketNumber} の商品を渡しましたか？`)) {
