@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                new Audio('/static/ping3.mp3').play();
                 alert('会計処理が完了しました。');
                 window.location.href = '/cashier'; // QRリーダー画面に戻る
             } else {

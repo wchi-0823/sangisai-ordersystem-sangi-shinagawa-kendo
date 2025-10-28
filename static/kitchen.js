@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const ordersContainer = document.getElementById('orders-container');
-    const notificationSound = new Audio('/static/ping.mp3');
+    const notificationSound = new Audio('/static/ping2.mp3');
     const unmuteButton = document.getElementById('unmute-button');
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     const inputPreview = document.getElementById('input-preview');
