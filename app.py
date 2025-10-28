@@ -210,6 +210,22 @@ def signage():
 # ====================================================================
 # APIエンドポイント (Backend API)
 # ====================================================================
+@app.route('/api/update_order_status', methods=['POST'])
+@login_required
+def update_order_status():
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    try:
+        data = request.get_json()
+        doc_id = data.get('docId')
+        new_status = data.get('status')
+        if not all([doc_id, new_status]):
+            return jsonify({'success': False, 'error': 'Missing data'}), 400
+        
+        db.collection('orders').document(doc_id).update({'status': new_status})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 @app.route('/api/get_firebase_token', methods=['GET'])
 @login_required
 def get_firebase_token():
