@@ -58,27 +58,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 2. 「会計完了にする」ボタンのクリックイベント
     confirmBtn.addEventListener('click', () => {
-        if (!orderDocId) return;
+    if (!orderDocId) return;
 
-        // バックエンドのAPIに、支払いステータス更新をリクエスト
-        fetch('/api/update_payment_status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ docId: orderDocId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                new Audio('/static/ping3.mp3').play();
-                alert('会計処理が完了しました。');
-                window.location.href = '/cashier'; // QRリーダー画面に戻る
-            } else {
-                alert('エラーが発生しました: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error("会計ステータス更新APIエラー:", error);
-            alert('通信エラーが発生しました。');
-        });
+    // ▼▼▼ ここからが修正部分 ▼▼▼
+    
+    // ① まず、音声ファイルを読み込む準備をする
+    const successSound = new Audio('/static/ping3.mp3');
+    
+    // ② 準備ができたら、すぐに再生を開始するが、完了を待たずに次の処理へ進む
+    //    こうすることで、ブラウザは「クリック直後の再生」と認識してくれる
+    successSound.play().catch(e => console.error("音声の再生に失敗しました:", e));
+
+    // ③ 音声の再生を待たずに、サーバーとの通信を開始する
+    fetch('/api/update_payment_status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: orderDocId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // 音声はすでに再生開始しているので、ここではアラートと画面遷移だけを行う
+            alert('会計処理が完了しました。');
+            window.location.href = '/cashier';
+        } else {
+            // もしサーバー処理が失敗したら、再生を止める（任意）
+            successSound.pause();
+            successSound.currentTime = 0;
+            alert('エラーが発生しました: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error("会計ステータス更新APIエラー:", error);
+        // 通信エラーでも再生を止める（任意）
+        successSound.pause();
+        successSound.currentTime = 0;
+        alert('通信エラーが発生しました。');
+    });
+
+    // ▲▲▲ ここまでが修正部分 ▲▲▲
     });
 });
