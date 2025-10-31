@@ -355,15 +355,18 @@ def upload_csv():
         csv_data = io.StringIO(file.stream.read().decode("utf-8-sig"))
         df = pd.read_csv(csv_data)
          # 必須カラムのチェック
-        required_columns = ['ItemID', 'Name', 'Price', 'Category', 'Status']
+        required_columns = ['ItemID', 'Name', 'Price', 'Category', 'Status', 'Allergens']
         if not all(col in df.columns for col in required_columns):
             return jsonify({'success': False, 'error': 'CSVの列名が不正です。テンプレートを確認してください。'}), 400
         for index, row in df.iterrows():
+            allergens_str = str(row['Allergens']) if pd.notna(row['Allergens']) else ''
+            allergens_list = [allergen.strip() for allergen in allergens_str.split(',') if allergen.strip()]
             item_data = {
                 'name': row['Name'], 'price': int(row['Price']), 'category': row['Category'],
                 'imageUrl': str(row['ImageURL']) if pd.notna(row['ImageURL']) else '',
                 'description': str(row['Description']) if pd.notna(row['Description']) else '',
-                'isSoldOut': bool(row['Status'] == '売り切れ')
+                'isSoldOut': bool(row['Status'] == '売り切れ'),
+                'allergens': allergens_list  # 配列として保存
             }
             db.collection('items').document(row['ItemID']).set(item_data)
         return jsonify({'success': True})
@@ -373,7 +376,7 @@ def upload_csv():
 @login_required
 def download_template_csv():
     if current_user.get_role() not in ['admin', 'superadmin']: return "Access Denied", 403
-    csv_header = "ItemID,Name,Price,Category,ImageURL,Description,Status\n"
+    csv_header = "ItemID,Name,Price,Category,ImageURL,Description,Status,Allergens\n"
     return Response(csv_header, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=menu_template.csv"})
 
 @app.route('/api/get_sales_data')

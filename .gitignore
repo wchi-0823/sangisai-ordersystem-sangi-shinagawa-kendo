@@ -9,3 +9,11 @@ __pycache__/
 
 # セットアップ用のスクリプト - オフラインで管理するため無視する
 create_superadmin.py
+
+# 仕様書 - オフラインで管理するため無視する
+specification.md
+specification.pdf
+
+# 処理フロー図 - オフラインで管理するため無視する
+flow.md
+flow.pdf

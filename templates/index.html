@@ -49,7 +49,11 @@
                         <h2>{{ item.name }}</h2>
                         <p><strong>価格:</strong> {{ item.price }}円</p>
                         <p>{{ item.description }}</p>
-                        
+                        {% if item.allergens and item.allergens|length > 0 %}
+                        <p style="font-size: 0.9em; color: #555;">
+                            <strong>アレルゲン: </strong>{{ item.allergens|join(', ') }}
+                        </p>
+                        {% endif %}
                         <!-- もし売り切れでなければ、数量セレクターとカート追加ボタンを表示 -->
                         {% if not item.isSoldOut %}
                             <div class="quantity-selector">

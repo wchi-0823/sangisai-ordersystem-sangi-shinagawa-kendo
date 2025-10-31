@@ -199,6 +199,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 {title: "カテゴリ", field: "category", editor: "input"}, 
                 {title: "商品説明", field: "description", editor: "input", width: 300},
                 {title: "画像URL", field: "imageUrl", editor: "input", width: 300},
+
+                {
+                    title: "アレルゲン (カンマ区切り)", 
+                    field: "allergens", 
+                    editor: "input",
+                    width: 250,
+                    formatter: function(cell, formatterParams, onRendered){
+                        const data = cell.getValue();
+                        return Array.isArray(data) ? data.join(', ') : '';
+                    },
+                    mutator: function(value, data, type, params, component){
+                        if (type === 'edit') {
+                            return value.split(',').map(s => s.trim()).filter(s => s);
+                        }
+                        return value;
+                    }
+                },
+                
                 // 【変更】「販売中」列を1クリックで編集できるように設定を変更
                 {
                     title: "販売中", 
