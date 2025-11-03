@@ -1,26 +1,9 @@
-/**
- * ====================================================================
- * 管理者ページ (admin.js)
- * ====================================================================
- * 機能：
- * 1. サイドバーの開閉と、スクロールに連動したハイライト
- * 2. ダッシュボードの描画 (KPI, グラフ) と売上CSVダウンロード
- * 3. 店舗設定の読み込み、プレビュー、保存
- * 4. メニュー編集テーブル(Tabulator)の制御と、CSVによる一括更新
- * 5. サイネージ管理テーブル(Tabulator)の制御と、CSVによる一括更新
- * 6. 【superadmin専用】ユーザー管理テーブルと、新規ユーザー追加
- * 7. 【superadmin専用】ロール別アクセス権限の設定
- * 8. 【superadmin専用】各種データリセット機能
- */
 document.addEventListener('DOMContentLoaded', () => {
-
-    
     // --- 店舗ステータストグルスイッチ ---
     const statusToggle = document.getElementById('store-status-toggle');
     const statusText = document.getElementById('store-status-text');
 
     if (statusToggle) {
-        // 1. 現在の状態をサーバーから取得して表示
         fetch('/api/get_store_status')
             .then(res => res.json())
             .then(data => {
@@ -29,11 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatusText(isOpen);
             });
 
-        // 2. スイッチが変更された時のイベント
         statusToggle.addEventListener('change', () => {
             const newStatus = statusToggle.checked;
-            
-            // サーバーに新しい状態を送信
             fetch('/api/update_store_status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -46,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(newStatus ? '注文の受付を開始しました。' : '注文の受付を停止しました。');
                 } else {
                     alert('状態の変更に失敗しました: ' + data.error);
-                    // 失敗したらスイッチを元の状態に戻す
                     statusToggle.checked = !newStatus;
                 }
             });
@@ -63,34 +42,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    // --- 1. サイドバーの開閉処理 ---
+    // --- サイドバーの開閉処理 ---
     const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     
     if (sidebarToggleBtn) {
-        sidebarToggleBtn.addEventListener('click', () => {
-            document.body.classList.toggle('sidebar-open');
-        });
+        sidebarToggleBtn.addEventListener('click', () => { document.body.classList.toggle('sidebar-open'); });
     }
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', () => {
-            document.body.classList.remove('sidebar-open');
-        });
+        sidebarOverlay.addEventListener('click', () => { document.body.classList.remove('sidebar-open'); });
     }
 
-    // スクロールに連動したサイドバーのハイライト処理
-    const sections = document.querySelectorAll('main section');
+    // --- スクロール連動ハイライト ---
+    const sections = document.querySelectorAll('.admin-container main section');
     const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
     window.addEventListener('scroll', () => {
         let currentSectionId = '';
         sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            if (window.pageYOffset >= sectionTop - 70) {
+            if (window.pageYOffset >= section.offsetTop - 70) {
                 currentSectionId = section.getAttribute('id');
             }
         });
-
         navLinks.forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${currentSectionId}`) {
@@ -99,8 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
-    // --- 2. ダッシュボード関連 ---
+    // --- ダッシュボード関連 ---
     function renderDashboard() {
         const totalRevenueEl = document.getElementById('total-revenue');
         if (!totalRevenueEl) return;
@@ -111,14 +82,16 @@ document.addEventListener('DOMContentLoaded', () => {
             totalRevenueEl.textContent = `¥ ${data.total_revenue.toLocaleString()}`;
             document.getElementById('total-orders').textContent = data.total_orders;
 
-            if(Chart.getChart("sales-by-item-chart")){ Chart.getChart("sales-by-item-chart").destroy(); }
+            ['sales-by-item-chart', 'sales-by-category-chart'].forEach(chartId => {
+                if(Chart.getChart(chartId)) { Chart.getChart(chartId).destroy(); }
+            });
+
             new Chart(document.getElementById('sales-by-item-chart').getContext('2d'), {
                 type: 'bar',
                 data: { labels: Object.keys(data.sales_by_item), datasets: [{ label: '販売数', data: Object.values(data.sales_by_item), backgroundColor: 'rgba(54, 162, 235, 0.6)' }] },
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
             });
 
-            if(Chart.getChart("sales-by-category-chart")){ Chart.getChart("sales-by-category-chart").destroy(); }
             new Chart(document.getElementById('sales-by-category-chart').getContext('2d'), {
                 type: 'pie',
                 data: { labels: Object.keys(data.sales_by_category), datasets: [{ data: Object.values(data.sales_by_category), backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(153, 102, 255, 0.6)'] }] },
@@ -128,22 +101,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     renderDashboard();
 
-    // 売上CSVダウンロードボタン
-    const downloadSalesBtn = document.getElementById('download-sales-csv-btn');
-    if(downloadSalesBtn) {
-        downloadSalesBtn.addEventListener('click', () => {
-            window.location.href = '/api/download_sales_csv';
-        });
-    }
-
-
-    // --- 3. 店舗設定 ---
+    // --- 店舗設定 ---
     const storeSettingsForm = document.getElementById('store-settings-form');
     if (storeSettingsForm) {
         const logoUrlInput = document.getElementById('store-logo-url');
         const logoPreview = document.getElementById('logo-preview');
 
-        // 設定の読み込みと表示
         fetch('/api/get_store_settings').then(res => res.json()).then(data => {
             document.getElementById('store-name').value = data.storeName || '';
             logoUrlInput.value = data.storeLogoUrl || '';
@@ -154,25 +117,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // ロゴURL入力時のプレビュー
         logoUrlInput.addEventListener('input', (e) => {
             const url = e.target.value;
-            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-                logoPreview.src = url;
-                logoPreview.style.display = 'block';
-            } else {
-                logoPreview.style.display = 'none';
-            }
+            logoPreview.style.display = (url && (url.startsWith('http://') || url.startsWith('https://'))) ? 'block' : 'none';
+            logoPreview.src = url;
         });
 
-        // 設定の保存
         storeSettingsForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const formData = new FormData(storeSettingsForm);
-            const data = Object.fromEntries(formData.entries());
+            const data = Object.fromEntries(new FormData(storeSettingsForm).entries());
             fetch('/api/update_store_settings', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
             }).then(res => res.json()).then(result => {
                 if (result.success) { 
                     alert('店舗設定を保存しました。ページをリロードします。');
@@ -184,78 +139,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-    // --- 4. メニュー管理 ---
+    // --- メニュー管理 ---
     const menuTableEl = document.getElementById('item-table');
     if (menuTableEl) {
         const menuTable = new Tabulator(menuTableEl, {
-            // 【変更】heightを削除し、データ量に応じた自動調整に変更
-            layout: "fitColumns", 
+            layout: "fitData",
             placeholder: "データを読み込み中...",
             columns: [
-                {title: "ID", field: "id", visible: false}, 
-                {title: "商品名", field: "name", editor: "input", width: 200},
+                {title: "ID", field: "id", visible: false},
+                {title: "商品名", field: "name", editor: "input", width: 150},
                 {title: "価格(円)", field: "price", editor: "number", hozAlign: "right", width: 100},
-                {title: "カテゴリ", field: "category", editor: "input"}, 
-                {title: "商品説明", field: "description", editor: "input", width: 300},
-                {title: "画像URL", field: "imageUrl", editor: "input", width: 300},
-
+                {title: "カテゴリ", field: "category", editor: "input", width: 120},
+                {title: "商品説明", field: "description", editor: "input"},
                 {
-                    title: "アレルゲン (カンマ区切り)", 
-                    field: "allergens", 
-                    editor: "input",
-                    width: 250,
-                    formatter: function(cell, formatterParams, onRendered){
-                        const data = cell.getValue();
-                        return Array.isArray(data) ? data.join(', ') : '';
-                    },
-                    mutator: function(value, data, type, params, component){
-                        if (type === 'edit') {
-                            return value.split(',').map(s => s.trim()).filter(s => s);
-                        }
-                        return value;
-                    }
-                },
-                {title: "セット商品", field: "isSet", hozAlign: "center", width: 100, formatter: "tickCross", cellClick: (e, cell) => cell.setValue(!cell.getValue())},
-                {title: "セット個数", field: "setCount", editor: "number", hozAlign: "right", width: 100},
-                {
-                    title: "セット対象商品 (カンマ区切り)", 
-                    field: "setItems", 
-                    editor: "input",
+                    title: "アレルゲン(カンマ区切り)", field: "allergens", editor: "input",
                     formatter: (cell) => Array.isArray(cell.getValue()) ? cell.getValue().join(', ') : '',
                     mutator: (value, data, type) => (type === 'edit') ? value.split(',').map(s => s.trim()).filter(s => s) : value
                 },
-                // 【変更】「販売中」列を1クリックで編集できるように設定を変更
+                {title: "画像URL", field: "imageUrl", editor: "input"},
+                {title: "セット商品", field: "isSet", hozAlign: "center", width: 100, formatter: "tickCross", cellClick: (e, cell) => cell.setValue(!cell.getValue())},
+                {title: "セット個数", field: "setCount", editor: "number", hozAlign: "right", width: 100},
                 {
-                    title: "販売中", 
-                    field: "isSoldOut", 
-                    hozAlign: "center", 
-                    width: 100,
-                    formatter: "tickCross", // 見た目はチェックマーク
-                    formatterParams:{
-                        tickElement:"<span style='color:green; font-weight:bold;'>&#10004;</span>",
-                        crossElement:"<span style='color:red; font-weight:bold;'>&#10006;</span>",
-                    },
-                    cellClick: function(e, cell){
-                        // クリック一回で値をトグルさせる
-                        cell.setValue(!cell.getValue());
-                    }
+                    title: "セット対象商品(カンマ区切り)", field: "setItems", editor: "input",
+                    formatter: (cell) => Array.isArray(cell.getValue()) ? cell.getValue().join(', ') : '',
+                    mutator: (value, data, type) => (type === 'edit') ? value.split(',').map(s => s.trim()).filter(s => s) : value
+                },
+                {
+                    title: "販売中", field: "isSoldOut", hozAlign: "center", width: 100,
+                    formatter: "tickCross",
+                    formatterParams:{ tickElement:"<span style='color:green; font-weight:bold;'>&#10004;</span>", crossElement:"<span style='color:red; font-weight:bold;'>&#10006;</span>" },
+                    cellClick: (e, cell) => cell.setValue(!cell.getValue())
                 },
             ],
         });
         
-        // セルの値が「プログラムによって」変更された後に発火するイベント
         menuTable.on("cellEdited", function(cell){
             const data = cell.getRow().getData();
-            const field = cell.getField();
-            let value = cell.getValue();
-
-            // 「販売中」のチェックボックスの場合、表示用の真偽値とDBに保存する真偽値が逆なので、反転させてからAPIに送る
-            // UI: true(チェック有) = 販売中  -> isSoldOut: false
-            // UI: false(チェック無) = 売り切れ -> isSoldOut: true
-            if (field === 'isSoldOut') {
-                value = !value;
-            }
+            let { field, value } = { field: cell.getField(), value: cell.getValue() };
+            if (field === 'isSoldOut') { value = !value; }
 
             fetch('/api/update_item', { 
                 method: 'POST', 
@@ -269,42 +190,48 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // データの読み込み
         fetch('/api/get_items').then(res => res.json()).then(data => {
-            if (data.error) { 
-                alert("データ読み込み失敗: " + data.error); 
-            } else { 
-                // DBのisSoldOut(true=売り切れ)を、UI表示用の真偽値(true=販売中)に変換する
-                const formattedData = data.map(item => ({ ...item, isSoldOut: !item.isSoldOut }));
-                menuTable.setData(formattedData);
+            if (data.error) { alert("データ読み込み失敗: " + data.error); } 
+            else { 
+                menuTable.setData(data.map(item => ({ ...item, isSoldOut: !item.isSoldOut })));
             }
         });
     }
     
-    const menuCsvForm = document.getElementById('csv-upload-form');
-    if (menuCsvForm) {
-        const fileInput = document.getElementById('csv-file-input');
-        const statusEl = document.getElementById('upload-status');
-        menuCsvForm.addEventListener('submit', (e) => {
+    // --- CSVアップロードフォームの共通処理 ---
+    function setupCsvUploadForm(formId, apiEndpoint, statusId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            const file = fileInput.files[0]; if (!file) return alert('ファイルを選択してください。');
+            const fileInput = form.querySelector('input[type="file"]');
+            const statusEl = document.getElementById(statusId);
+            const file = fileInput.files[0];
+            if (!file) return alert('ファイルを選択してください。');
+            
             statusEl.textContent = 'アップロード中...';
-            const formData = new FormData(); formData.append('csv-file', file);
-            fetch('/api/upload_csv', { method: 'POST', body: formData })
+            const formData = new FormData(); 
+            formData.append('csv-file', file);
+            
+            fetch(apiEndpoint, { method: 'POST', body: formData })
                 .then(res => res.json()).then(data => {
                     if (data.success) {
                         statusEl.textContent = '更新完了！2秒後にリロードします。';
                         setTimeout(() => window.location.reload(), 2000);
                     } else { statusEl.textContent = 'エラー: ' + data.error; }
+                }).catch(err => {
+                    statusEl.textContent = '通信エラーが発生しました。';
                 });
         });
     }
+    setupCsvUploadForm('csv-upload-form', '/api/upload_csv', 'upload-status');
+    setupCsvUploadForm('signage-csv-upload-form', '/api/upload_signage_csv', 'signage-upload-status');
 
-    // --- 5. サイネージ管理 ---
+    // --- サイネージ管理 ---
     const signageTableEl = document.getElementById('signage-table');
     if(signageTableEl) {
         const signageTable = new Tabulator(signageTableEl, {
-            // 【変更】heightを削除し、データ量に応じた自動調整に変更
             layout: "fitColumns", 
             placeholder: "データを読み込み中...",
             columns: [
@@ -323,37 +250,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.error) { alert("サイネージデータ読み込み失敗: " + data.error); } else { signageTable.setData(data); }
         });
     }
-    const signageCsvForm = document.getElementById('signage-csv-upload-form');
-    if (signageCsvForm) {
-        const fileInput = document.getElementById('signage-csv-file-input');
-        const statusEl = document.getElementById('signage-upload-status');
-        signageCsvForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const file = fileInput.files[0]; if (!file) return alert('ファイルを選択してください。');
-            statusEl.textContent = 'アップロード中...';
-            const formData = new FormData(); formData.append('csv-file', file);
-            fetch('/api/upload_signage_csv', { method: 'POST', body: formData })
-                .then(res => res.json()).then(data => {
-                    if (data.success) {
-                        statusEl.textContent = '更新完了！2秒後にリロードします。';
-                        setTimeout(() => window.location.reload(), 2000);
-                    } else { statusEl.textContent = 'エラー: ' + data.error; }
-                });
-        });
-    }
 
-    // --- 6. ユーザー管理 (superadmin専用) ---
+    // --- ユーザー管理 (superadmin専用) ---
     const userTableEl = document.getElementById('user-table');
     if (userTableEl) {
         const userTable = new Tabulator(userTableEl, {
-            // 【変更】heightを削除し、データ量に応じた自動調整に変更
             layout: "fitColumns", 
             placeholder: "ユーザー情報を読み込み中...",
             columns: [
                 {title: "ユーザー名", field: "username"},
                 {title: "役割", field: "role"},
                 {title: "削除", width: 100, hozAlign:"center",
-                 formatter: (cell) => "<button class='button-link danger-btn'>削除</button>",
+                 formatter: () => "<button class='button-link danger-btn'>削除</button>",
                  cellClick: (e, cell) => {
                     const data = cell.getRow().getData();
                     if (confirm(`本当にユーザー「${data.username}」を削除しますか？`)) {
@@ -372,13 +280,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const addUserForm = document.getElementById('add-user-form');
     if (addUserForm) {
-        const userStatusEl = document.getElementById('user-status');
         addUserForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const userStatusEl = document.getElementById('user-status');
             const username = document.getElementById('new-username').value;
             const password = document.getElementById('new-password').value;
             const role = document.getElementById('new-role').value;
-            if (!username || !password) { alert('ユーザー名とパスワードは必須です。'); return; }
+            if (!username || !password) { return alert('ユーザー名とパスワードは必須です。'); }
+            
             userStatusEl.textContent = '登録中...';
             fetch('/api/add_user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username, password, role})})
                 .then(res => res.json()).then(data => {
@@ -392,15 +301,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 7. ロール別アクセス権限 (superadmin専用) ---
+    // --- ロール別アクセス権限 (superadmin専用) ---
     const permissionsTable = document.getElementById('role-access-table');
     if (permissionsTable) {
         const roles = ['admin', 'staff'];
         const pages = [
-            { id: 'kitchen', name: '厨房モニター' },
-            { id: 'display', name: '総合モニター' },
-            { id: 'cashier', name: '会計・受取' },
-            { id: 'admin', name: '管理者ページ' },
+            { id: 'kitchen', name: '厨房モニター' }, { id: 'display', name: '総合モニター' },
+            { id: 'cashier', name: '会計・受取' }, { id: 'admin', name: '管理者ページ' },
         ];
         const tbody = permissionsTable.querySelector('tbody');
 
@@ -411,23 +318,18 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.appendChild(tr);
         });
 
-        fetch('/api/get_permissions')
-            .then(res => res.json())
-            .then(permissions => {
-                if(permissions.error) throw new Error(permissions.error);
-                document.querySelectorAll('#role-access-table input[type="checkbox"]').forEach(checkbox => {
-                    const role = checkbox.dataset.role;
-                    const page = checkbox.dataset.page;
-                    if (permissions[role] && permissions[role][page]) {
-                        checkbox.checked = true;
-                    }
-                });
-            })
-            .catch(err => console.error('権限データの読み込みに失敗:', err));
+        fetch('/api/get_permissions').then(res => res.json()).then(permissions => {
+            if(permissions.error) throw new Error(permissions.error);
+            document.querySelectorAll('#role-access-table input[type="checkbox"]').forEach(checkbox => {
+                const { role, page } = checkbox.dataset;
+                if (permissions[role] && permissions[role][page]) {
+                    checkbox.checked = true;
+                }
+            });
+        }).catch(err => console.error('権限データの読み込みに失敗:', err));
 
         tbody.addEventListener('change', (e) => {
             if (e.target.type !== 'checkbox') return;
-
             const currentPermissions = {};
             roles.forEach(role => {
                 currentPermissions[role] = {};
@@ -440,55 +342,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusEl = document.getElementById('permissions-status');
             statusEl.textContent = '保存中...';
             fetch('/api/update_permissions', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(currentPermissions)
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(currentPermissions)
             }).then(res => res.json()).then(result => {
-                if (result.success) {
-                    statusEl.textContent = '権限設定を保存しました。';
-                    setTimeout(() => statusEl.textContent = '', 2000);
-                } else {
-                    statusEl.textContent = '保存に失敗しました: ' + result.error;
-                }
+                statusEl.textContent = result.success ? '権限設定を保存しました。' : '保存に失敗しました: ' + result.error;
+                setTimeout(() => statusEl.textContent = '', 2000);
             });
         });
     }
 
-
-    // --- 8. リセット機能 (superadmin専用) ---
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn){
-        resetDataBtn.addEventListener('click', () => {
-            if (confirm('本当にすべての運営データ（注文、商品、サイネージ）を削除しますか？\nこの操作は取り消せません。')) {
-                fetch('/api/reset_data', {method: 'POST'}).then(res => res.json()).then(data => {
-                    if(data.success) { alert('運営データをリセットしました。'); window.location.reload(); }
-                    else { alert('リセット失敗: ' + data.error); }
-                });
-            }
-        });
-    }
-    const resetAllBtn = document.getElementById('reset-all-btn');
-    if(resetAllBtn){
-        resetAllBtn.addEventListener('click', () => {
-            if (confirm('【最終確認】本当に運営データと、あなた以外のアカウントをすべて削除しますか？')) {
-                fetch('/api/reset_all', {method: 'POST'}).then(res => res.json()).then(data => {
-                    if(data.success) { alert('ALLリセットが完了しました。'); window.location.reload(); }
-                    else { alert('リセット失敗: ' + data.error); }
-                });
-            }
-        });
-    }
-    const resetSuperBtn = document.getElementById('reset-super-btn');
-    if(resetSuperBtn){
-        resetSuperBtn.addEventListener('click', () => {
-            if (prompt('【超危険】すべてのデータを完全に削除し、工場出荷状態に戻します。\n実行するには「SUPER RESET」と入力してください。') === 'SUPER RESET') {
-                fetch('/api/reset_super', {method: 'POST'}).then(res => res.json()).then(data => {
+    // --- リセット機能 (superadmin専用) ---
+    function setupResetButton(buttonId, apiEndpoint, confirmMessage) {
+        const button = document.getElementById(buttonId);
+        if (!button) return;
+        button.addEventListener('click', () => {
+            const promptMessage = (buttonId === 'reset-super-btn') ? '【超危険】すべてのデータを完全に削除し、工場出荷状態に戻します。\n実行するには「SUPER RESET」と入力してください。' : confirmMessage;
+            const confirmation = (buttonId === 'reset-super-btn') ? prompt(promptMessage) === 'SUPER RESET' : confirm(promptMessage);
+            
+            if (confirmation) {
+                fetch(apiEndpoint, {method: 'POST'}).then(res => res.json()).then(data => {
                     if(data.success) {
-                        alert('SUPERリセットが完了しました。再度アクセスするには、create_superadmin.pyを実行する必要があります。');
-                        window.location.href = '/logout';
+                        alert('リセットが完了しました。');
+                        if (buttonId === 'reset-super-btn') {
+                            window.location.href = '/logout';
+                        } else {
+                            window.location.reload();
+                        }
                     } else { alert('リセット失敗: ' + data.error); }
                 });
             }
         });
     }
+    setupResetButton('reset-data-btn', '/api/reset_data', '本当にすべての運営データ（注文、商品、サイネージ）を削除しますか？\nこの操作は取り消せません。');
+    setupResetButton('reset-all-btn', '/api/reset_all', '【最終確認】本当に運営データと、あなた以外のアカウントをすべて削除しますか？');
+    setupResetButton('reset-super-btn', '/api/reset_super', ''); // prompt message is handled inside
 });

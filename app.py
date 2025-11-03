@@ -6,7 +6,6 @@
 # --- ライブラリのインポート ---
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-from firebase_admin import credentials, firestore
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -32,15 +31,13 @@ except FileNotFoundError:
 db = firestore.client()
 
 # 2. Flaskアプリケーションの初期化
-# 2. Flaskアプリケーションの初期化
 app = Flask(__name__)
-# 環境変数からSECRET_KEYを読み込む。なければ開発用のランダムキーを使う。
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # --- 認証機能 (Flask-Login) の設定 ---
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login' # 未ログイン時にリダイレクトされるルート名
+login_manager.login_view = 'login'
 login_manager.login_message = "このページにアクセスするにはログインが必要です。"
 login_manager.login_message_category = "error"
 
@@ -53,7 +50,6 @@ class User(UserMixin):
     def get_role(self):
         return self.data.get('role')
 
-# ユーザーIDからユーザー情報を読み込むための関数
 @login_manager.user_loader
 def load_user(user_id):
     user_doc = db.collection('users').document(user_id).get()
@@ -61,73 +57,57 @@ def load_user(user_id):
         return User(user_doc.to_dict())
     return None
 
-# 未ログインユーザーが保護ページにアクセスした際の処理
 @login_manager.unauthorized_handler
 def unauthorized():
     return redirect(url_for('login', next=request.path))
 
-# --- 【新規】全テンプレートに共通の変数を渡す ---
 @app.context_processor
 def inject_store_settings():
-    """全てのテンプレートで店舗設定を使えるようにする"""
     try:
         doc = db.collection('store_settings').document('main').get()
         if doc.exists:
             return doc.to_dict()
     except Exception as e:
         print(f"Error injecting store settings: {e}")
-    return {} # 何も取得できなくてもエラーにしない
+    return {}
 
-# --- 【新規】権限チェックのためのデコレータ ---
 def role_required(page_name):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # superadminは常にアクセス可能
             if current_user.get_role() == 'superadmin':
                 return f(*args, **kwargs)
-            
-            # DBから権限設定を読み込む
             try:
                 permissions_doc = db.collection('permissions').document('role_access').get()
                 if permissions_doc.exists:
                     permissions = permissions_doc.to_dict()
                     user_role = current_user.get_role()
-                    # ユーザーのロールとページ名でアクセス権をチェック
                     if permissions.get(user_role, {}).get(page_name, False):
                         return f(*args, **kwargs)
             except Exception as e:
                 print(f"Error checking permissions: {e}")
-
-            # 権限がない場合は権限不足ページへ
             return redirect(url_for('unauthorized_page'))
         return decorated_function
     return decorator
 
-
 # ====================================================================
 # ログイン・ログアウト・権限エラー用ルート
 # ====================================================================
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         next_page = request.args.get('next')
-        if next_page: return redirect(next_page)
-        return redirect(url_for('index'))
+        return redirect(next_page or url_for('admin'))
     
     next_page_url = request.args.get('next') or request.form.get('next') or ''
-    
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         user_doc = db.collection('users').document(username).get()
-
         if user_doc.exists and check_password_hash(user_doc.to_dict().get('passwordHash', ''), password):
             user = User(user_doc.to_dict())
             login_user(user)
             return redirect(next_page_url or url_for('admin'))
-
     return render_template('login.html', next=next_page_url)
 
 @app.route('/logout')
@@ -142,21 +122,14 @@ def unauthorized_page():
     return render_template('unauthorized.html'), 403
 
 # ====================================================================
-# ページ表示用ルート (Frontend Routing)
+# ページ表示用ルート
 # ====================================================================
 @app.route('/')
 def index():
-    # Firestoreから店舗の営業状態を取得
     doc = db.collection('store_settings').document('main').get()
-    is_open = True # デフォルトは営業中
-    if doc.exists:
-        is_open = doc.to_dict().get('isStoreOpen', True)
-
+    is_open = doc.to_dict().get('isStoreOpen', True) if doc.exists else True
     if not is_open:
-        # 閉店中なら、新しい閉店中ページを表示
         return render_template('closed.html')
-
-    # 営業中なら、今まで通りメニューページを表示
     items_ref = db.collection('items').stream()
     items_list = [dict(item.to_dict(), **{'ItemID': item.id}) for item in items_ref]
     all_categories = sorted(list(set(item.get('category', '未分類') for item in items_list)))
@@ -185,19 +158,19 @@ def order_complete():
 
 @app.route('/kitchen')
 @login_required
-@role_required('kitchen') # 権限チェックを変更
+@role_required('kitchen')
 def kitchen():
     return render_template('kitchen.html')
 
 @app.route('/display')
 @login_required
-@role_required('display') # 権限チェックを変更
+@role_required('display')
 def display():
     return render_template('display.html')
 
 @app.route('/cashier')
 @login_required
-@role_required('cashier') # 権限チェックを変更
+@role_required('cashier')
 def cashier():
     return render_template('cashier.html')
 
@@ -209,7 +182,7 @@ def payment():
 
 @app.route('/admin')
 @login_required
-@role_required('admin') # 権限チェックを変更
+@role_required('admin')
 def admin():
     return render_template('admin.html', current_user=current_user.data)
 
@@ -217,70 +190,9 @@ def admin():
 def signage():
     return render_template('signage.html')
 
-
 # ====================================================================
-# APIエンドポイント (Backend API)
+# APIエンドポイント
 # ====================================================================
-@app.route('/api/get_store_status', methods=['GET'])
-def get_store_status():
-    """店舗の営業状態を取得するAPI（ログイン不要）"""
-    try:
-        doc = db.collection('store_settings').document('main').get()
-        if doc.exists:
-            # isStoreOpenが設定されていなければ、デフォルトでTrue（営業中）を返す
-            status = doc.to_dict().get('isStoreOpen', True)
-            return jsonify({'isStoreOpen': status})
-        return jsonify({'isStoreOpen': True}) # ドキュメントがなければ営業中とみなす
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/update_store_status', methods=['POST'])
-@login_required
-def update_store_status():
-    """店舗の営業状態を更新するAPI（ログイン必須）"""
-    if current_user.get_role() not in ['admin', 'superadmin']:
-        return jsonify({'success': False, 'error': 'Forbidden'}), 403
-    try:
-        data = request.get_json()
-        new_status = data.get('isStoreOpen')
-        if new_status is None:
-            return jsonify({'success': False, 'error': 'Missing data'}), 400
-        
-        db.collection('store_settings').document('main').set({'isStoreOpen': bool(new_status)}, merge=True)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-@app.route('/api/update_order_status', methods=['POST'])
-@login_required
-def update_order_status():
-    if not current_user.is_authenticated:
-        return jsonify({'success': False, 'error': 'Forbidden'}), 403
-    try:
-        data = request.get_json()
-        doc_id = data.get('docId')
-        new_status = data.get('status')
-        if not all([doc_id, new_status]):
-            return jsonify({'success': False, 'error': 'Missing data'}), 400
-        
-        db.collection('orders').document(doc_id).update({'status': new_status})
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-@app.route('/api/get_firebase_token', methods=['GET'])
-@login_required
-def get_firebase_token():
-    """
-    現在ログインしているユーザーのためのFirebaseカスタムトークンを生成するAPI
-    """
-    try:
-        # Flask-Loginのcurrent_userからユーザーIDを取得
-        uid = current_user.id
-        # サーバー側でカスタムトークンを生成
-        custom_token = auth.create_custom_token(uid)
-        return jsonify({'token': custom_token.decode('utf-8')})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
 @app.route('/order', methods=['POST'])
 def create_order():
     try:
@@ -292,11 +204,9 @@ def create_order():
             'status': '調理中', 'paymentStatus': '未会計', 'createdAt': firestore.SERVER_TIMESTAMP
         }
         update_time, doc_ref = db.collection('orders').add(order_data)
-        new_order_id = doc_ref.id
-        return jsonify({'success': True, 'ticketNumber': new_ticket_number, 'orderId': new_order_id})
+        return jsonify({'success': True, 'ticketNumber': new_ticket_number, 'orderId': doc_ref.id})
     except Exception as e:
-        print(f"Error creating order: {e}")
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/get_order_by_ticket', methods=['GET'])
 def get_order_by_ticket():
@@ -320,6 +230,22 @@ def update_payment_status():
         return jsonify({'success': True})
     except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/update_order_status', methods=['POST'])
+@login_required
+def update_order_status():
+    if not current_user.is_authenticated:
+        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    try:
+        data = request.get_json()
+        doc_id = data.get('docId')
+        new_status = data.get('status')
+        if not all([doc_id, new_status]):
+            return jsonify({'success': False, 'error': 'Missing data'}), 400
+        db.collection('orders').document(doc_id).update({'status': new_status})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/get_items', methods=['GET'])
 @login_required
 def get_items():
@@ -337,8 +263,8 @@ def update_item():
         data = request.get_json()
         doc_id, field, value = data.get('id'), data.get('field'), data.get('value')
         if not all([doc_id, field, value is not None]): return jsonify({'success': False, 'error': 'Missing data'}), 400
-        if field == 'price': value = int(value)
-        elif field == 'isSoldOut': value = bool(value)
+        if field == 'price' or field == 'setCount': value = int(value)
+        elif field == 'isSoldOut' or field == 'isSet': value = bool(value)
         db.collection('items').document(doc_id).update({field: value})
         return jsonify({'success': True})
     except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
@@ -351,26 +277,33 @@ def upload_csv():
     file = request.files['csv-file']
     if file.filename == '' or not file.filename.endswith('.csv'): return jsonify({'success': False, 'error': 'Invalid file'}), 400
     try:
-        for doc in db.collection('items').stream(): doc.reference.delete()
         csv_data = io.StringIO(file.stream.read().decode("utf-8-sig"))
         df = pd.read_csv(csv_data)
-         # 必須カラムのチェック
+        
         required_columns = ['ItemID', 'Name', 'Price', 'Category', 'Status', 'Allergens', 'IsSet', 'SetCount', 'SetItems']
         if not all(col in df.columns for col in required_columns):
-            return jsonify({'success': False, 'error': 'CSVの列名が不正です。テンプレートを確認してください。'}), 400
+            return jsonify({'success': False, 'error': 'CSVの列名が不正です。IsSet, SetCount, SetItems列などを確認してください。'}), 400
+
+        for doc in db.collection('items').stream(): doc.reference.delete()
+
         for index, row in df.iterrows():
+            allergens_str = str(row['Allergens']) if pd.notna(row['Allergens']) else ''
+            allergens_list = [allergen.strip() for allergen in allergens_str.split(',') if allergen.strip()]
+            
             is_set = bool(row['IsSet'])
             set_count = int(row['SetCount']) if is_set else 0
             set_items_str = str(row['SetItems']) if is_set and pd.notna(row['SetItems']) else ''
             set_items_list = [item.strip() for item in set_items_str.split(',') if item.strip()]
-            allergens_str = str(row['Allergens']) if pd.notna(row['Allergens']) else ''
-            allergens_list = [allergen.strip() for allergen in allergens_str.split(',') if allergen.strip()]
+
             item_data = {
                 'name': row['Name'], 'price': int(row['Price']), 'category': row['Category'],
                 'imageUrl': str(row['ImageURL']) if pd.notna(row['ImageURL']) else '',
                 'description': str(row['Description']) if pd.notna(row['Description']) else '',
                 'isSoldOut': bool(row['Status'] == '売り切れ'),
-                'allergens': allergens_list  # 配列として保存
+                'allergens': allergens_list,
+                'isSet': is_set,
+                'setCount': set_count,
+                'setItems': set_items_list
             }
             db.collection('items').document(row['ItemID']).set(item_data)
         return jsonify({'success': True})
@@ -396,8 +329,13 @@ def get_sales_data():
             total_revenue += order_data.get('totalPrice', 0)
             total_orders += 1
             for item in order_data.get('items', []):
-                category = items_by_name.get(item['name'], {}).get('category', '未分類')
-                all_items_ordered.append({'name': item['name'], 'quantity': item['quantity'], 'subtotal': item['price'] * item['quantity'], 'category': category})
+                if item.get('isSet'):
+                    category = items_master.get(item['id'], {}).get('category', 'セット')
+                    all_items_ordered.append({'name': item['name'], 'quantity': 1, 'subtotal': item['price'], 'category': category})
+                else:
+                    category = items_by_name.get(item['name'], {}).get('category', '未分類')
+                    all_items_ordered.append({'name': item['name'], 'quantity': item['quantity'], 'subtotal': item['price'] * item['quantity'], 'category': category})
+        
         if not all_items_ordered: return jsonify({'total_revenue': 0, 'total_orders': 0, 'sales_by_item': {}, 'sales_by_category': {}})
         df = pd.DataFrame(all_items_ordered)
         sales_by_item = df.groupby('name')['quantity'].sum().sort_values(ascending=False)
@@ -405,6 +343,51 @@ def get_sales_data():
         dashboard_data = {'total_revenue': total_revenue, 'total_orders': total_orders, 'sales_by_item': sales_by_item.to_dict(), 'sales_by_category': sales_by_category.to_dict()}
         return jsonify(dashboard_data)
     except Exception as e: return jsonify({'error': str(e)}), 500
+
+@app.route('/api/download_sales_csv')
+@login_required
+def download_sales_csv():
+    if current_user.get_role() not in ['admin', 'superadmin']: return "Access Denied", 403
+    try:
+        all_items_ordered = []
+        items_master = {doc.id: doc.to_dict() for doc in db.collection('items').stream()}
+        items_by_name = {data['name']: data for id, data in items_master.items()}
+        for order_doc in db.collection('orders').stream():
+            order_data = order_doc.to_dict()
+            for item in order_data.get('items', []):
+                if item.get('isSet'):
+                    all_items_ordered.append({'name': item['name'], 'quantity': 1, 'subtotal': item['price'], 'category': 'セット'})
+                else:
+                    category = items_by_name.get(item['name'], {}).get('category', '未分類')
+                    all_items_ordered.append({'name': item['name'], 'quantity': item['quantity'], 'subtotal': item['price'] * item['quantity'], 'category': category})
+        
+        if not all_items_ordered: return "No data", 404
+        df = pd.DataFrame(all_items_ordered)
+        csv_output = io.StringIO()
+        df.to_csv(csv_output, index=False, encoding='utf-8-sig')
+        return Response(csv_output.getvalue(), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=sales_details.csv"})
+    except Exception as e: return str(e), 500
+
+@app.route('/api/get_store_status', methods=['GET'])
+def get_store_status():
+    try:
+        doc = db.collection('store_settings').document('main').get()
+        if doc.exists:
+            return jsonify({'isStoreOpen': doc.to_dict().get('isStoreOpen', True)})
+        return jsonify({'isStoreOpen': True})
+    except Exception as e: return jsonify({'error': str(e)}), 500
+
+@app.route('/api/update_store_status', methods=['POST'])
+@login_required
+def update_store_status():
+    if current_user.get_role() not in ['admin', 'superadmin']: return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    try:
+        data = request.get_json()
+        new_status = data.get('isStoreOpen')
+        if new_status is None: return jsonify({'success': False, 'error': 'Missing data'}), 400
+        db.collection('store_settings').document('main').set({'isStoreOpen': bool(new_status)}, merge=True)
+        return jsonify({'success': True})
+    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/get_signage_items')
 def get_signage_items():
@@ -475,12 +458,7 @@ def download_signage_template_csv():
 def get_users():
     if current_user.get_role() != 'superadmin': return jsonify({'error': 'Forbidden'}), 403
     try:
-        users_list = []
-        for doc in db.collection('users').stream():
-            user_data = doc.to_dict()
-            user_data.pop('passwordHash', None)
-            user_data['id'] = doc.id
-            users_list.append(user_data)
+        users_list = [dict(doc.to_dict(), **{'id': doc.id, 'passwordHash': None}) for doc in db.collection('users').stream()]
         return jsonify(users_list)
     except Exception as e: return jsonify({'error': str(e)}), 500
 
@@ -549,93 +527,47 @@ def reset_super():
         return jsonify({'success': True})
     except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/download_sales_csv')
-@login_required
-def download_sales_csv():
-    if current_user.get_role() not in ['admin', 'superadmin']:
-        return "Access Denied", 403
-    try:
-        all_items_ordered, total_revenue, total_orders = [], 0, 0
-        items_master = {doc.id: doc.to_dict() for doc in db.collection('items').stream()}
-        items_by_name = {data['name']: data for id, data in items_master.items()}
-        for order_doc in db.collection('orders').stream():
-            order_data = order_doc.to_dict()
-            total_revenue += order_data.get('totalPrice', 0)
-            total_orders += 1
-            for item in order_data.get('items', []):
-                category = items_by_name.get(item['name'], {}).get('category', '未分類')
-                all_items_ordered.append({'name': item['name'], 'quantity': item['quantity'], 'subtotal': item['price'] * item['quantity'], 'category': category})
-        if not all_items_ordered: return jsonify({'total_revenue': 0, 'total_orders': 0, 'sales_by_item': {}, 'sales_by_category': {}})
-        df = pd.DataFrame(all_items_ordered)
-        
-        csv_output = io.StringIO()
-        df.to_csv(csv_output, index=False, encoding='utf-8-sig')
-        csv_data = csv_output.getvalue()
-        
-        return Response(csv_data, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=sales.csv"})
-    except Exception as e: return jsonify({'error': str(e)}), 500
-
-# 【旧】BBS機能は今回は使われていないので、コメントアウトまたは削除してもOKです
-# @app.route('/api/get_bbs', methods=['GET']) ...
-
-# --- 【修正】店舗設定API ---
 @app.route('/api/get_store_settings', methods=['GET'])
 @login_required
 def get_store_settings():
-    if current_user.get_role() not in ['admin', 'superadmin']:
-        return jsonify({'error': 'Forbidden'}), 403
+    if current_user.get_role() not in ['admin', 'superadmin']: return jsonify({'error': 'Forbidden'}), 403
     doc = db.collection('store_settings').document('main').get()
-    if doc.exists:
-        return jsonify(doc.to_dict())
-    else:
-        # ドキュメントが存在しない場合は、空のデータを返す
-        return jsonify({})
+    return jsonify(doc.to_dict()) if doc.exists else jsonify({})
 
 @app.route('/api/update_store_settings', methods=['POST'])
 @login_required
 def update_store_settings():
-    if current_user.get_role() not in ['admin', 'superadmin']:
-        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    if current_user.get_role() not in ['admin', 'superadmin']: return jsonify({'success': False, 'error': 'Forbidden'}), 403
     try:
         data = request.get_json()
         db.collection('store_settings').document('main').set(data, merge=True)
         return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
 
-# --- 【新規】ロール別権限設定API ---
 @app.route('/api/get_permissions', methods=['GET'])
 @login_required
 def get_permissions():
-    if current_user.get_role() != 'superadmin':
-        return jsonify({'error': 'Forbidden'}), 403
+    if current_user.get_role() != 'superadmin': return jsonify({'error': 'Forbidden'}), 403
     try:
         doc = db.collection('permissions').document('role_access').get()
         if doc.exists:
             return jsonify(doc.to_dict())
         else:
-            # デフォルトの権限設定を返す
-            default_permissions = {
+            return jsonify({
                 'admin': {'kitchen': True, 'display': True, 'cashier': True, 'admin': True},
                 'staff': {'kitchen': False, 'display': True, 'cashier': True, 'admin': False}
-            }
-            return jsonify(default_permissions)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            })
+    except Exception as e: return jsonify({'error': str(e)}), 500
 
 @app.route('/api/update_permissions', methods=['POST'])
 @login_required
 def update_permissions():
-    if current_user.get_role() != 'superadmin':
-        return jsonify({'success': False, 'error': 'Forbidden'}), 403
+    if current_user.get_role() != 'superadmin': return jsonify({'success': False, 'error': 'Forbidden'}), 403
     try:
         new_permissions = request.get_json()
         db.collection('permissions').document('role_access').set(new_permissions)
         return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
 
-
-# --- アプリケーションの実行 ---
 if __name__ == '__main__':
     app.run(debug=True)

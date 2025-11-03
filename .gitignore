@@ -17,3 +17,6 @@ specification.pdf
 # 処理フロー図 - オフラインで管理するため無視する
 flow.md
 flow.pdf
+
+# メニューテンプレートファイル - オフラインで管理するため無視する
+menu_template.csv

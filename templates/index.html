@@ -4,115 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ storeName or '模擬店 注文システム' }}</title>
-    <!-- サイト共通のスタイルシートを読み込む -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-    #set-modal-options table { width: 100%; }
-    #set-modal-options th, #set-modal-options td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-    .modal-actions { margin-top: 20px; text-align: right; }
+        .allergens-container { margin-top: 10px; font-size: 0.9em; color: #555; }
+        .allergen-tag { display: inline-block; background-color: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; padding: 2px 8px; margin-right: 5px; margin-bottom: 5px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
+        #set-modal-options table { width: 100%; border-collapse: collapse; }
+        #set-modal-options th, #set-modal-options td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #eee; }
+        #set-modal-options input[type="checkbox"] { transform: scale(1.5); }
+        .modal-actions { margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
 <body>
-
-    <!-- ページ上部のヘッダー -->
     <header>
         <div class="header-content">
-            {% if storeLogoUrl %}
-                <img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">
-            {% endif %}
+            {% if storeLogoUrl %}<img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">{% endif %}
             <h1>{{ storeName or '商品メニュー' }}</h1>
         </div>
     </header>
 
-    <!-- メインコンテンツエリア -->
     <main>
-        <!-- 「カートに追加しました」などの通知を表示する場所 -->
         <div id="toast" class="toast" style="top: 30px;"></div>
-
-        <!-- カテゴリ絞り込みボタンを表示するコンテナ -->
         <div id="category-filter" class="category-container">
             <button class="category-btn active" data-category="all">すべて</button>
-            <!-- app.pyから渡されたカテゴリリストをループしてボタンを生成 -->
-            {% for category in categories %}
-                <button class="category-btn" data-category="{{ category }}">{{ category }}</button>
-            {% endfor %}
+            {% for category in categories %}<button class="category-btn" data-category="{{ category }}">{{ category }}</button>{% endfor %}
         </div>
-
-        <!-- 商品リスト全体を囲むコンテナ -->
         <div id="menu-items-list">
-            <!-- app.pyから渡された商品リストをループして、商品カードを一つずつ生成 -->
             {% for item in items %}
-                <div class="card item-card" data-item-id="{{ item.ItemID }}" data-category="{{ item.get('category', '未分類') }}">
-                    
-                    <!-- もし画像URLが存在すれば、画像を表示する -->
-                    {% if item.imageUrl %}
-                        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" class="item-image">
-                    {% endif %}
-                    
-                    <!-- 商品名や価格などの情報エリア -->
-                    <div class="item-info">
-                        <!-- ... -->
-                        {% if not item.isSoldOut %}
-                            {% if item.isSet %}
-                                <!-- セット商品用のボタン -->
-                                <button class="select-set-btn" 
-                                        data-item-id="{{ item.ItemID }}"
-                                        data-item-name="{{ item.name }}" 
-                                        data-item-price="{{ item.price }}"
-                                        data-set-count="{{ item.setCount }}"
-                                        data-set-items="{{ item.setItems|join(',') }}">
-                                    セット内容を選択する
-                                </button>
-                            {% else %}
-                                <!-- 単品商品用の数量セレクターとボタン -->
-                                <div class="quantity-selector">
-                                    <button class="quantity-minus">-</button>
-                                    <span class="quantity">1</span>
-                                    <button class="quantity-plus">+</button>
-                                </div>
-                                <button class="add-to-cart-btn" data-item-name="{{ item.name }}" data-item-price="{{ item.price }}">
-                                    カートに追加
-                                </button>
-                            {% endif %}
-                        {% else %}
-                            <p class="sold-out">売り切れ</p>
-                        {% endif %}
+            <div class="card item-card" data-item-id="{{ item.ItemID }}" data-category="{{ item.get('category', '未分類') }}">
+                {% if item.imageUrl %}<img src="{{ item.imageUrl }}" alt="{{ item.name }}" class="item-image">{% endif %}
+                <div class="item-info">
+                    <h2>{{ item.name }}</h2>
+                    <p><strong>価格:</strong> {{ item.price }}円</p>
+                    <p>{{ item.description }}</p>
+
+                    {% if item.allergens and item.allergens|length > 0 %}
+                    <div class="allergens-container">
+                        <strong>アレルギー情報:</strong>
+                        <div>{% for allergen in item.allergens %}<span class="allergen-tag">{{ allergen }}</span>{% endfor %}</div>
                     </div>
+                    {% endif %}
+
+                    {% if not item.isSoldOut %}
+                        {% if item.isSet %}
+                            <button class="select-set-btn" 
+                                    data-item-id="{{ item.ItemID }}"
+                                    data-item-name="{{ item.name }}" 
+                                    data-item-price="{{ item.price }}"
+                                    data-set-count="{{ item.setCount }}"
+                                    data-set-items="{{ item.setItems|join(',') }}">
+                                セット内容を選択する
+                            </button>
+                        {% else %}
+                            <div class="quantity-selector">
+                                <button class="quantity-minus">-</button>
+                                <span class="quantity">1</span>
+                                <button class="quantity-plus">+</button>
+                            </div>
+                            <button class="add-to-cart-btn" data-item-name="{{ item.name }}" data-item-price="{{ item.price }}">
+                                カートに追加
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <p class="sold-out">売り切れ</p>
+                    {% endif %}
                 </div>
+            </div>
             {% endfor %}
         </div>
     </main>
 
-    <!-- 画面右下に常に表示される「カートを見る」ボタン -->
     <div class="fab-container">
         <a href="/cart" class="fab" aria-label="カートを確認する">
-            <!-- 買い物かごのSVGアイコン -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
         </a>
     </div>
-
 
     <div id="set-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2 id="set-modal-title">セット内容を選択</h2>
-            <p>合計 <span id="set-modal-count">0</span> 個選択してください。</p>
-            <div id="set-modal-options">
-                <!-- ここにJSで選択肢が生成されます -->
-            </div>
+            <p>合計 <strong id="set-modal-count" style="font-size: 1.2em;">0</strong> 個選択してください。（現在 <span id="set-modal-selected-count">0</span> 個選択中）</p>
+            <div id="set-modal-options"></div>
             <div class="modal-actions">
-                <button id="set-modal-cancel-btn">キャンセル</button>
+                <button id="set-modal-cancel-btn" class="button-link" style="background-color: #6c757d;">キャンセル</button>
                 <button id="set-modal-confirm-btn" disabled>決定</button>
             </div>
         </div>
     </div>
-    <!-- このページ専用のJavaScriptファイルを読み込む -->
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
 
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

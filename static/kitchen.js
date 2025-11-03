@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // kitchen.js の中身は、以前提供したプランBの完成版から変更ありません。
+    // 以下に再掲します。
     const ordersContainer = document.getElementById('orders-container');
-    const notificationSound = new Audio('/static/ping2.mp3');
+    const notificationSound = new Audio('/static/ping.mp3');
     const unmuteButton = document.getElementById('unmute-button');
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     const inputPreview = document.getElementById('input-preview');
@@ -86,9 +88,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const orderId = doc.id;
                 let itemsHtml = '<ul>';
                 order.items.forEach(item => {
-                    itemsHtml += `<li>${item.name} <strong>x ${item.quantity}</strong></li>`;
+                    if (item.isSet && item.selectedItems) {
+                        itemsHtml += `<li><strong>${item.name} x ${item.quantity}</strong>`;
+                        itemsHtml += '<ul style="margin-left: 20px; list-style-type: circle;">';
+                        item.selectedItems.forEach(selected => {
+                            itemsHtml += `<li>${selected}</li>`;
+                        });
+                        itemsHtml += '</ul></li>';
+                    } else {
+                        itemsHtml += `<li>${item.name} <strong>x ${item.quantity}</strong></li>`;
+                    }
                 });
                 itemsHtml += '</ul>';
+
                 const orderDiv = document.createElement('div');
                 orderDiv.className = 'order-card';
                 orderDiv.innerHTML = `
@@ -115,20 +127,5 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
-            // 商品リストのHTMLを生成
-            let itemsHtml = '<ul>';
-            order.items.forEach(item => {
-                if (item.isSet && item.selectedItems) {
-                    itemsHtml += `<li><strong>${item.name} x ${item.quantity}</strong>`;
-                    itemsHtml += '<ul style="margin-left: 20px;">';
-                    item.selectedItems.forEach(selected => {
-                        itemsHtml += `<li>- ${selected}</li>`;
-                    });
-                    itemsHtml += '</ul></li>';
-                } else {
-                    itemsHtml += `<li>${item.name} <strong>x ${item.quantity}</strong></li>`;
-                }
-            });
-            itemsHtml += '</ul>';
         });
 });
