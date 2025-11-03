@@ -16,7 +16,7 @@
         .modal-actions { margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
-<body data-items-map="{{ items_map_json|safe }}">
+<body data-items-map='{{ items_map|tojson|safe }}'>
     <header>
         <div class="header-content">
             {% if storeLogoUrl %}<img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">{% endif %}

@@ -14,7 +14,6 @@ import datetime
 import pandas as pd
 import io
 import os
-import json
 from functools import wraps # 権限チェックデコレータのために追加
 
 # --- アプリケーションの初期設定 ---
@@ -149,7 +148,7 @@ def index():
     return render_template('index.html', 
                            items=items_list, 
                            categories=all_categories,
-                           items_map_json=json.dumps(items_map))
+                           items_map=items_map)
 
 @app.route('/cart')
 def cart():
