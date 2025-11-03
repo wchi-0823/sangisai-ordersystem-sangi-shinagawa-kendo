@@ -111,6 +111,96 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 数量表示を1にリセット
             quantityEl.textContent = '1';
+
+            // セット商品用モーダルの処理
+            const modal = document.getElementById('set-modal');
+            const modalTitle = document.getElementById('set-modal-title');
+            const modalCount = document.getElementById('set-modal-count');
+            const modalOptions = document.getElementById('set-modal-options');
+            const confirmBtn = document.getElementById('set-modal-confirm-btn');
+            const cancelBtn = document.getElementById('set-modal-cancel-btn');
+            let currentSetItem = null;
+
+            // 「セット内容を選択する」ボタンのイベント
+            document.querySelectorAll('.select-set-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    currentSetItem = {
+                        id: button.dataset.itemId,
+                        name: button.dataset.itemName,
+                        price: parseInt(button.dataset.itemPrice),
+                        setCount: parseInt(button.dataset.setCount),
+                        setItems: button.dataset.setItems.split(','),
+                        isSet: true // セット商品であることを示すフラグ
+                    };
+                    openSetModal(currentSetItem);
+                });
+            });
+
+            function openSetModal(item) {
+                modalTitle.textContent = `${item.name}の内容を選択`;
+                modalCount.textContent = item.setCount;
+                modalOptions.innerHTML = ''; // 中身をリセット
+
+                const table = document.createElement('table');
+                let tableHtml = '<thead><tr><th>商品</th><th>選択</th></tr></thead><tbody>';
+
+                item.setItems.forEach(choiceName => {
+                    tableHtml += `
+                        <tr>
+                            <td>${choiceName}</td>
+                            <td><input type="checkbox" name="set-choice" value="${choiceName}"></td>
+                        </tr>
+                    `;
+                });
+                tableHtml += '</tbody>';
+                table.innerHTML = tableHtml;
+                modalOptions.appendChild(table);
+
+                confirmBtn.disabled = true;
+                modal.style.display = 'flex';
+            }
+
+            // モーダル内のチェックボックスが変更された時のイベント
+            modalOptions.addEventListener('change', (e) => {
+                if (e.target.name === 'set-choice') {
+                    const checkedCount = modalOptions.querySelectorAll('input[name="set-choice"]:checked').length;
+                    if (checkedCount === currentSetItem.setCount) {
+                        confirmBtn.disabled = false;
+                    } else {
+                        confirmBtn.disabled = true;
+                    }
+                }
+            });
+
+            // モーダルの「決定」ボタン
+            confirmBtn.addEventListener('click', () => {
+                const selectedChoices = Array.from(modalOptions.querySelectorAll('input[name="set-choice"]:checked'))
+                                            .map(checkbox => checkbox.value);
+                
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                cart.push({
+                    id: currentSetItem.id,
+                    name: currentSetItem.name,
+                    price: currentSetItem.price,
+                    quantity: 1, // セット商品は常に1つ
+                    isSet: true,
+                    selectedItems: selectedChoices // 選択した商品を配列で保存
+                });
+
+                localStorage.setItem('cart', JSON.stringify(cart));
+                showToast(`${currentSetItem.name}をカートに追加しました！`);
+                closeModal();
+            });
+
+            // モーダルの「キャンセル」ボタン
+            cancelBtn.addEventListener('click', () => {
+                closeModal();
+            });
+
+            function closeModal() {
+                modal.style.display = 'none';
+                currentSetItem = null;
+            }
         });
     });
 });

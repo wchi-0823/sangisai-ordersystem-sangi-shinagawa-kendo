@@ -115,5 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+            // 商品リストのHTMLを生成
+            let itemsHtml = '<ul>';
+            order.items.forEach(item => {
+                if (item.isSet && item.selectedItems) {
+                    itemsHtml += `<li><strong>${item.name} x ${item.quantity}</strong>`;
+                    itemsHtml += '<ul style="margin-left: 20px;">';
+                    item.selectedItems.forEach(selected => {
+                        itemsHtml += `<li>- ${selected}</li>`;
+                    });
+                    itemsHtml += '</ul></li>';
+                } else {
+                    itemsHtml += `<li>${item.name} <strong>x ${item.quantity}</strong></li>`;
+                }
+            });
+            itemsHtml += '</ul>';
         });
 });

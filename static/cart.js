@@ -28,6 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
             cart.forEach((item, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'card cart-item-card';
+                
+                // 商品カードのHTML構造
+                let itemDetailsHtml = '';
+                if (item.isSet && item.selectedItems) {
+                    // セット商品の場合、選択内容を表示
+                    itemDetailsHtml = '<ul>' + item.selectedItems.map(name => `<li>- ${name}</li>`).join('') + '</ul>';
+                }
+
+                itemDiv.innerHTML = `
+                    ${imageHtml}
+                    <div class="cart-item-info">
+                        <h3>${item.name}</h3>
+                        ${itemDetailsHtml} // <-- ここに追加
+                        <p>単価: ${item.price}円</p>
+                        // ... (残りのコントロールボタン)
+                    </div>
+                `;
 
                 // 画像URLがあればimgタグを、なければ空文字を生成
                 const imageHtml = item.imageUrl 

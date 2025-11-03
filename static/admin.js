@@ -216,7 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         return value;
                     }
                 },
-                
+                {title: "セット商品", field: "isSet", hozAlign: "center", width: 100, formatter: "tickCross", cellClick: (e, cell) => cell.setValue(!cell.getValue())},
+                {title: "セット個数", field: "setCount", editor: "number", hozAlign: "right", width: 100},
+                {
+                    title: "セット対象商品 (カンマ区切り)", 
+                    field: "setItems", 
+                    editor: "input",
+                    formatter: (cell) => Array.isArray(cell.getValue()) ? cell.getValue().join(', ') : '',
+                    mutator: (value, data, type) => (type === 'edit') ? value.split(',').map(s => s.trim()).filter(s => s) : value
+                },
                 // 【変更】「販売中」列を1クリックで編集できるように設定を変更
                 {
                     title: "販売中", 
