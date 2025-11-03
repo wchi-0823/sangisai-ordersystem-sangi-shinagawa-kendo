@@ -14,6 +14,7 @@ import datetime
 import pandas as pd
 import io
 import os
+import json
 from functools import wraps # 権限チェックデコレータのために追加
 
 # --- アプリケーションの初期設定 ---
@@ -130,10 +131,25 @@ def index():
     is_open = doc.to_dict().get('isStoreOpen', True) if doc.exists else True
     if not is_open:
         return render_template('closed.html')
+    
     items_ref = db.collection('items').stream()
-    items_list = [dict(item.to_dict(), **{'ItemID': item.id}) for item in items_ref]
+    items_list = []
+    items_map = {} # JavaScriptに渡すための商品情報マップ
+    for item in items_ref:
+        item_data = item.to_dict()
+        item_data['ItemID'] = item.id
+        items_list.append(item_data)
+        items_map[item.id] = {
+            'name': item_data.get('name'),
+            'price': item_data.get('price')
+        }
+
     all_categories = sorted(list(set(item.get('category', '未分類') for item in items_list)))
-    return render_template('index.html', items=items_list, categories=all_categories)
+    
+    return render_template('index.html', 
+                           items=items_list, 
+                           categories=all_categories,
+                           items_map_json=json.dumps(items_map))
 
 @app.route('/cart')
 def cart():

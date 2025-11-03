@@ -16,7 +16,7 @@
         .modal-actions { margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end; }
     </style>
 </head>
-<body>
+<body data-items-map="{{ items_map_json|safe }}">
     <header>
         <div class="header-content">
             {% if storeLogoUrl %}<img src="{{ storeLogoUrl }}" alt="{{ storeName }} Logo" class="header-logo">{% endif %}
@@ -81,18 +81,20 @@
         </a>
     </div>
 
+    <!-- templates/index.html のモーダル部分 -->
     <div id="set-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2 id="set-modal-title">セット内容を選択</h2>
-            <p>合計 <strong id="set-modal-count" style="font-size: 1.2em;">0</strong> 個選択してください。（現在 <span id="set-modal-selected-count">0</span> 個選択中）</p>
-            <div id="set-modal-options"></div>
+            <p>合計 <strong id="set-modal-count" style="font-size: 1.2em;">0</strong> 個選択してください。</p>
+            <div id="set-modal-options">
+                <!-- JSで3x3のテーブルがここに生成されます -->
+            </div>
             <div class="modal-actions">
                 <button id="set-modal-cancel-btn" class="button-link" style="background-color: #6c757d;">キャンセル</button>
                 <button id="set-modal-confirm-btn" disabled>決定</button>
             </div>
         </div>
     </div>
-
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
